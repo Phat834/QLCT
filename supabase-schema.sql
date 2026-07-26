@@ -13,7 +13,7 @@ create table if not exists public.wallets (
 create table if not exists public.categories (
   id text primary key,
   name text not null,
-  icon text
+  icon text not null
 );
 
 -- Transactions table
@@ -24,16 +24,24 @@ create table if not exists public.transactions (
   target_wallet_id text references public.wallets(id),
   amount numeric not null,
   type text not null check (type in ('INCOME', 'EXPENSE', 'TRANSFER')),
+  note text,
   created_at timestamptz not null default now()
 );
+
+-- Index để query nhanh theo wallet
+CREATE INDEX idx_transactions_wallet_id ON public.transactions(wallet_id);
 
 -- Budgets table
 create table if not exists public.budgets (
   id text primary key,
   category_id text not null references public.categories(id),
+  wallet_id text not null references public.wallets(id),
   limit_amount numeric not null,
   current_spent numeric not null default 0
 );
+
+-- Index để query nhanh theo category
+CREATE INDEX idx_budgets_category_id ON public.budgets(category_id);
 
 -- Enable Row Level Security
 alter table public.wallets enable row level security;

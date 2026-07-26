@@ -10,7 +10,8 @@ app.use('/api', createApiRouter());
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
-  res.status(500).json({ error: 'Lỗi server!' });
+  const message = err?.message || err?.toString?.() || 'Lỗi server!';
+  res.status(err?.statusCode || 500).json({ error: message });
 });
 
 const PORT = process.env.PORT || 3000;

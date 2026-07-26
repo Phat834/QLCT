@@ -3,6 +3,8 @@ import { ApiController } from '../controllers/ApiController.js';
 import { WalletController } from '../controllers/WalletController.js';
 import { CreateWalletUseCase } from '../../application/use-cases/CreateWalletUseCase.js';
 import { CreateCategoryUseCase } from '../../application/use-cases/CreateCategoryUseCase.js';
+import { UpdateCategoryUseCase } from '../../application/use-cases/UpdateCategoryUseCase.js';
+import { DeleteCategoryUseCase } from '../../application/use-cases/DeleteCategoryUseCase.js';
 import { CreateBudgetUseCase } from '../../application/use-cases/CreateBudgetUseCase.js';
 import { UpdateBudgetUseCase } from '../../application/use-cases/UpdateBudgetUseCase.js';
 import { DeleteBudgetUseCase } from '../../application/use-cases/DeleteBudgetUseCase.js';
@@ -32,6 +34,8 @@ export const createApiRouter = () => {
     new GetBudgetsUseCase(budgetRepo),
     new GetBudgetByCategoryUseCase(budgetRepo),
     new CreateCategoryUseCase(categoryRepo),
+    new UpdateCategoryUseCase(categoryRepo),
+    new DeleteCategoryUseCase(categoryRepo),
     new CreateBudgetUseCase(budgetRepo),
     new UpdateBudgetUseCase(budgetRepo),
     new DeleteBudgetUseCase(budgetRepo)
@@ -43,8 +47,12 @@ export const createApiRouter = () => {
   router.get('/transactions/all', (req, res) => apiController.getTransactions(req, res));
   router.get('/wallets', (req, res) => apiController.getWallets(req, res));
   router.post('/wallets', (req, res) => walletController.createWallet(req, res));
+  router.put('/wallets/:id', (req, res) => walletController.updateWallet(req, res));
+  router.delete('/wallets/:id', (req, res) => walletController.deleteWallet(req, res));
   router.get('/categories', (req, res) => apiController.getCategories(req, res));
   router.post('/categories', (req, res) => apiController.createCategory(req, res));
+  router.put('/categories/:id', (req, res) => apiController.updateCategory(req, res));
+  router.delete('/categories/:id', (req, res) => apiController.deleteCategory(req, res));
   router.get('/budgets', (req, res) => apiController.getBudgets(req, res));
   router.post('/budgets', (req, res) => apiController.createBudget(req, res));
   router.put('/budgets/:id', (req, res) => apiController.updateBudget(req, res));

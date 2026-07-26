@@ -52,4 +52,15 @@ export class SupabaseWalletRepository implements IWalletRepository {
       (item) => new Wallet(item.id, item.name, Number(item.balance), new Date(item.created_at))
     );
   }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('wallets')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Lỗi khi xoá Wallet: ${error.message}`);
+    }
+  }
 }

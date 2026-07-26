@@ -1,12 +1,14 @@
 export class Budget {
   private id: string;
   private categoryId: string;
+  private walletId: string;
   private limitAmount: number;
   private currentSpent: number;
 
-  constructor(categoryId: string, limitAmount: number, currentSpent: number, id: string) {
+  constructor(categoryId: string, walletId: string, limitAmount: number, currentSpent: number, id: string) {
     this.id = id;
     this.categoryId = categoryId;
+    this.walletId = walletId;
     this.limitAmount = limitAmount;
     this.currentSpent = currentSpent;
   }
@@ -17,6 +19,10 @@ export class Budget {
 
   public getCategoryId(): string {
     return this.categoryId;
+  }
+
+  public getWalletId(): string {
+    return this.walletId;
   }
 
   public getLimitAmount(): number {

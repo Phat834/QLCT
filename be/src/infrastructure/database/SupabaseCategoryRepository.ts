@@ -36,4 +36,29 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
 
     return data.map((item) => new Category(item.id, item.name, item.icon));
   }
+
+  async update(category: Category): Promise<void> {
+    const { error } = await supabase
+      .from('categories')
+      .upsert({
+        id: category.getId(),
+        name: category.getName(),
+        icon: category.getIcon(),
+      });
+
+    if (error) {
+      throw new Error(`Lỗi khi cập nhật Category: ${error.message}`);
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Lỗi khi xoá Category: ${error.message}`);
+    }
+  }
 }

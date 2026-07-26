@@ -9,6 +9,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
       .upsert({
         id: budget.getId(),
         category_id: budget.getCategoryId(),
+        wallet_id: budget.getWalletId(),
         limit_amount: budget.getLimitAmount(),
         current_spent: budget.getCurrentSpent(),
       });
@@ -27,7 +28,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
 
     if (error || !data) return null;
 
-    return new Budget(data.category_id, Number(data.limit_amount), Number(data.current_spent), data.id);
+    return new Budget(data.category_id, data.wallet_id, Number(data.limit_amount), Number(data.current_spent), data.id);
   }
 
   async findByCategoryId(categoryId: string): Promise<Budget | null> {
@@ -39,7 +40,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
 
     if (error || !data) return null;
 
-    return new Budget(data.category_id, Number(data.limit_amount), Number(data.current_spent), data.id);
+    return new Budget(data.category_id, data.wallet_id, Number(data.limit_amount), Number(data.current_spent), data.id);
   }
 
   async findAll(): Promise<Budget[]> {
@@ -50,7 +51,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
     }
 
     return data.map(
-      (item) => new Budget(item.category_id, Number(item.limit_amount), Number(item.current_spent), item.id)
+      (item) => new Budget(item.category_id, item.wallet_id, Number(item.limit_amount), Number(item.current_spent), item.id)
     );
   }
 
