@@ -53,4 +53,15 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
       (item) => new Budget(item.category_id, Number(item.limit_amount), Number(item.current_spent), item.id)
     );
   }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('budgets')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Lỗi khi xoá Budget: ${error.message}`);
+    }
+  }
 }

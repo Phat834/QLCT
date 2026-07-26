@@ -34,6 +34,7 @@ export class CreateIncomeUseCase {
       TransactionType.INCOME,
       dto.categoryId,
       undefined,
+      dto.note,
       new Date()
     );
 

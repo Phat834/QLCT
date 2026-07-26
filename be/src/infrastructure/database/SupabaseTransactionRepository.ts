@@ -13,7 +13,8 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
         target_wallet_id: transaction.getTargetWalletId() || null,
         amount: transaction.getAmount(),
         type: transaction.getType(),
-        created_at: transaction.getCreatedAt(),
+        note: transaction.getNote() || null,
+        created_at: transaction.getCreatedAt().toISOString(),
       });
 
     if (error) {
@@ -38,6 +39,7 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
       data.type,
       data.category_id,
       data.target_wallet_id || undefined,
+      data.note || undefined,
       new Date(data.created_at)
     );
   }
@@ -59,6 +61,7 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
           item.type,
           item.category_id,
           item.target_wallet_id || undefined,
+          item.note || undefined,
           new Date(item.created_at)
         )
     );
@@ -80,6 +83,7 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
           item.type,
           item.category_id,
           item.target_wallet_id || undefined,
+          item.note || undefined,
           new Date(item.created_at)
         )
     );

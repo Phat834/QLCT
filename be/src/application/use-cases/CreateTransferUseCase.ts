@@ -38,6 +38,7 @@ export class CreateTransferUseCase {
       TransactionType.TRANSFER,
       undefined,
       dto.toWalletId,
+      dto.note,
       new Date()
     );
 

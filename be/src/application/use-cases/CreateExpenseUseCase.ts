@@ -9,6 +9,7 @@ export interface CreateExpenseDTO {
   walletId: string;
   categoryId: string;
   amount: number;
+  note?: string | undefined;
 }
 
 export class CreateExpenseUseCase {
@@ -41,6 +42,7 @@ export class CreateExpenseUseCase {
       TransactionType.EXPENSE,
       dto.categoryId,
       undefined,
+      dto.note,
       new Date()
     );
 

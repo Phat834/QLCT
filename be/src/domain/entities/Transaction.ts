@@ -6,7 +6,8 @@ export class Transaction {
   private categoryId: string | undefined;
   private amount: number;
   private type: TransactionType;
-  private targetWalletId: string | undefined; // Dùng cho giao dịch TRANSFER
+  private targetWalletId: string | undefined;
+  private note: string | undefined;
   private createdAt: Date;
 
   constructor(
@@ -16,6 +17,7 @@ export class Transaction {
     type: TransactionType,
     categoryId?: string,
     targetWalletId?: string,
+    note?: string,
     createdAt?: Date
   ) {
     if (amount <= 0) throw new Error("Số tiền giao dịch phải lớn hơn 0");
@@ -29,6 +31,7 @@ export class Transaction {
     this.type = type;
     this.categoryId = categoryId;
     this.targetWalletId = targetWalletId;
+    this.note = note;
     this.createdAt = createdAt || new Date();
   }
 
@@ -38,5 +41,6 @@ export class Transaction {
   public getWalletId(): string { return this.walletId; }
   public getCategoryId(): string | undefined { return this.categoryId; }
   public getTargetWalletId(): string | undefined { return this.targetWalletId; }
+  public getNote(): string | undefined { return this.note; }
   public getCreatedAt(): Date { return this.createdAt; }
 }

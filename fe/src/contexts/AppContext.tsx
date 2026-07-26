@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 export interface Wallet {
   id: string;
@@ -20,6 +20,7 @@ export interface Transaction {
   amount: number;
   type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
   targetWalletId?: string;
+  note?: string;
   createdAt: string;
 }
 
@@ -82,6 +83,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    refetch();
+  }, []);
 
   const refetch = useCallback(async () => {
     try {

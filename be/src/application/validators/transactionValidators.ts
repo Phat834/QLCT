@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const createExpenseSchema = z.object({
   id: z.string().min(1, 'Thiếu id'),
-  walletId: z.string().uuid('Ví không hợp lệ'),
+  walletId: z.string().min(1, 'Thiếu ví'),
   categoryId: z.string().min(1, 'Thiếu danh mục'),
   amount: z.number().positive('Số tiền phải lớn hơn 0'),
   note: z.string().optional(),
@@ -10,7 +10,7 @@ export const createExpenseSchema = z.object({
 
 export const createIncomeSchema = z.object({
   id: z.string().min(1, 'Thiếu id'),
-  walletId: z.string().uuid('Ví không hợp lệ'),
+  walletId: z.string().min(1, 'Thiếu ví'),
   categoryId: z.string().min(1, 'Thiếu danh mục'),
   amount: z.number().positive('Số tiền phải lớn hơn 0'),
   note: z.string().optional(),

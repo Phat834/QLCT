@@ -24,4 +24,6 @@ export const api = {
     fetchJson<any>(`${API_BASE}/transactions/income`, { method: 'POST', body: JSON.stringify(body) }),
   createTransfer: (body: any) =>
     fetchJson<any>(`${API_BASE}/transactions/transfer`, { method: 'POST', body: JSON.stringify(body) }),
+  createCategory: (body: { id: string; name: string; icon: string }) =>
+    fetchJson<any>(`${API_BASE}/categories`, { method: 'POST', body: JSON.stringify(body) }),
 };

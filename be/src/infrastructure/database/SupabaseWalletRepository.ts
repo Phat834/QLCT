@@ -10,7 +10,7 @@ export class SupabaseWalletRepository implements IWalletRepository {
         id: wallet.getId(),
         name: wallet.getName(),
         balance: wallet.getBalance(),
-        created_at: wallet.getCreatedAt(),
+        created_at: wallet.getCreatedAt().toISOString(),
       });
 
     if (error) {

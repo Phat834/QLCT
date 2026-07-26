@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import { ApiController } from '../controllers/ApiController.js';
 import { WalletController } from '../controllers/WalletController.js';
+import { CreateWalletUseCase } from '../../application/use-cases/CreateWalletUseCase.js';
+import { CreateCategoryUseCase } from '../../application/use-cases/CreateCategoryUseCase.js';
+import { CreateBudgetUseCase } from '../../application/use-cases/CreateBudgetUseCase.js';
+import { UpdateBudgetUseCase } from '../../application/use-cases/UpdateBudgetUseCase.js';
+import { DeleteBudgetUseCase } from '../../application/use-cases/DeleteBudgetUseCase.js';
 import { GetTransactionsUseCase } from '../../application/use-cases/GetTransactionsUseCase.js';
 import { GetWalletsUseCase } from '../../application/use-cases/GetWalletsUseCase.js';
 import { GetCategoriesUseCase } from '../../application/use-cases/GetCategoriesUseCase.js';
 import { GetBudgetsUseCase } from '../../application/use-cases/GetBudgetsUseCase.js';
 import { GetBudgetByCategoryUseCase } from '../../application/use-cases/GetBudgetByCategoryUseCase.js';
-import { CreateWalletUseCase } from '../../application/use-cases/CreateWalletUseCase.js';
 import { SupabaseTransactionRepository } from '../../infrastructure/database/SupabaseTransactionRepository.js';
 import { SupabaseWalletRepository } from '../../infrastructure/database/SupabaseWalletRepository.js';
 import { SupabaseCategoryRepository } from '../../infrastructure/database/SupabaseCategoryRepository.js';
@@ -26,7 +30,11 @@ export const createApiRouter = () => {
     new GetWalletsUseCase(walletRepo),
     new GetCategoriesUseCase(categoryRepo),
     new GetBudgetsUseCase(budgetRepo),
-    new GetBudgetByCategoryUseCase(budgetRepo)
+    new GetBudgetByCategoryUseCase(budgetRepo),
+    new CreateCategoryUseCase(categoryRepo),
+    new CreateBudgetUseCase(budgetRepo),
+    new UpdateBudgetUseCase(budgetRepo),
+    new DeleteBudgetUseCase(budgetRepo)
   );
 
   const walletController = new WalletController();
@@ -36,7 +44,11 @@ export const createApiRouter = () => {
   router.get('/wallets', (req, res) => apiController.getWallets(req, res));
   router.post('/wallets', (req, res) => walletController.createWallet(req, res));
   router.get('/categories', (req, res) => apiController.getCategories(req, res));
+  router.post('/categories', (req, res) => apiController.createCategory(req, res));
   router.get('/budgets', (req, res) => apiController.getBudgets(req, res));
+  router.post('/budgets', (req, res) => apiController.createBudget(req, res));
+  router.put('/budgets/:id', (req, res) => apiController.updateBudget(req, res));
+  router.delete('/budgets/:id', (req, res) => apiController.deleteBudget(req, res));
   router.get('/budgets/category/:categoryId', (req, res) => apiController.getBudgetByCategory(req, res));
 
   return router;

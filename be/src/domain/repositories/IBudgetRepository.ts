@@ -5,4 +5,5 @@ export interface IBudgetRepository {
   findById(id: string): Promise<Budget | null>;
   findByCategoryId(categoryId: string): Promise<Budget | null>;
   findAll(): Promise<Budget[]>;
+  delete(id: string): Promise<void>;
 }
