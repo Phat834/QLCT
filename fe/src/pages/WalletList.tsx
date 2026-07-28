@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, X } from 'lucide-react';
 
 export default function WalletList() {
   const { wallets, refetch } = useApp();
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [balance, setBalance] = useState('');
@@ -46,7 +46,7 @@ export default function WalletList() {
         }
       }
       resetForm();
-      setShowForm(false);
+      setShowModal(false);
       await refetch();
     } catch (err: any) {
       setError(err.message);
@@ -78,41 +78,20 @@ export default function WalletList() {
     setEditingId(w.id);
     setName(w.name);
     setBalance(String(w.balance));
-    setShowForm(false);
+    setShowModal(true);
     setError('');
   };
 
   const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-white dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
-  const labelClass = 'block text-sm font-medium light:text-gray-700 dark:text-gray-300 mb-1';
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold light:text-gray-800 dark:text-black">Ví</h2>
-        <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+        <button onClick={() => { resetForm(); setShowModal(true); }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2">
           <Plus size={16} /> Thêm ví
         </button>
       </div>
-
-      {(showForm || editingId) && (
-        <form onSubmit={handleSubmit} className="light:bg-white dark:bg-gray-900 rounded-lg shadow p-6 mb-6 max-w-md space-y-4">
-          <div>
-            <label className={labelClass}>Tên ví</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} required className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Số dư</label>
-            <input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} required min={0} className={inputClass} />
-          </div>
-          {error && <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>}
-          <div className="flex gap-3">
-            <button type="submit" disabled={loading} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-              {loading ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Lưu'}
-            </button>
-            <button type="button" onClick={() => { resetForm(); setShowForm(false); }} className="border light:border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg light:text-gray-700 dark:text-gray-300">Hủy</button>
-          </div>
-        </form>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {wallets.map((w) => (
@@ -131,6 +110,39 @@ export default function WalletList() {
           <p className="light:text-gray-400 dark:text-gray-500 col-span-3 text-center py-8">Chưa có ví nào</p>
         )}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative">
+            <div className="flex justify-between items-center mb-5 border-b dark:border-gray-800 pb-3">
+              <h3 className="text-xl font-bold dark:text-white">{editingId ? 'Cập nhật ví' : 'Thêm ví mới'}</h3>
+              <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Tên ví</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} required className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Số dư</label>
+                <input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} required min={0} className={inputClass} />
+              </div>
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <div className="flex gap-3 pt-3">
+                <button type="submit" disabled={loading} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition disabled:opacity-50">
+                  {loading ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Lưu'}
+                </button>
+                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2.5 border rounded-lg dark:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

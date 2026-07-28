@@ -82,17 +82,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    refetch();
+    let cancelled = false;
+    (async () => {
+      try {
+        const [w, c, t, b] = await Promise.all([
+          api.getWallets(),
+          api.getCategories(),
+          api.getTransactions(),
+          api.getBudgets(),
+        ]);
+        if (!cancelled) {
+          setWallets(w);
+          setCategories(c);
+          setTransactions(t);
+          setBudgets(b);
+        }
+      } catch (err: any) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setInitialLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const refetch = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
       const [w, c, t, b] = await Promise.all([
         api.getWallets(),
         api.getCategories(),
@@ -105,13 +124,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setBudgets(b);
     } catch (err: any) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   return (
-    <AppContext.Provider value={{ wallets, categories, transactions, budgets, loading, error, refetch }}>
+    <AppContext.Provider value={{ wallets, categories, transactions, budgets, loading: initialLoading, error, refetch }}>
       {children}
     </AppContext.Provider>
   );
