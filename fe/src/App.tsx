@@ -4,7 +4,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import TransactionList from './pages/TransactionList';
-import TransactionForm from './pages/TransactionForm';
 import WalletList from './pages/WalletList';
 import CategoryList from './pages/CategoryList';
 import BudgetList from './pages/BudgetList';
@@ -16,8 +15,6 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'transactions', element: <TransactionList /> },
-      { path: 'transactions/new', element: <TransactionForm /> },
-      { path: 'transactions/:id/edit', element: <TransactionForm /> },
       { path: 'wallets', element: <WalletList /> },
       { path: 'categories', element: <CategoryList /> },
       { path: 'budgets', element: <BudgetList /> },

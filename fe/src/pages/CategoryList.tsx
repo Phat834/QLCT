@@ -1,23 +1,29 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, X } from 'lucide-react';
 
 export default function CategoryList() {
   const { categories, refetch } = useApp();
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setName('');
+    setIcon('');
+    setEditingId(null);
+    setError('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); // Clear previous errors
+    setError('');
     setLoading(true);
     try {
       if (editingId) {
-        // Update existing category
         const res = await fetch(`http://localhost:3000/api/categories/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -28,7 +34,6 @@ export default function CategoryList() {
           throw new Error(err.error || res.statusText);
         }
       } else {
-        // Create new category
         const id = 'cat_' + Math.random().toString(36).slice(2, 8);
         const res = await fetch('http://localhost:3000/api/categories', {
           method: 'POST',
@@ -40,10 +45,8 @@ export default function CategoryList() {
           throw new Error(err.error || res.statusText);
         }
       }
-      setName('');
-      setIcon('');
-      setEditingId(null); // Reset editing state
-      setShowForm(false);
+      resetForm();
+      setShowModal(false);
       await refetch();
     } catch (err: any) {
       setError(err.message);
@@ -54,7 +57,6 @@ export default function CategoryList() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xoá danh mục này?')) return;
-    setError('');
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:3000/api/categories/${id}`, {
@@ -76,48 +78,20 @@ export default function CategoryList() {
     setEditingId(c.id);
     setName(c.name);
     setIcon(c.icon || '');
-    setShowForm(true); // Show form for editing
-    setError('');
-  };
-
-  const resetForm = () => {
-    setName('');
-    setIcon('');
-    setEditingId(null);
+    setShowModal(true);
     setError('');
   };
 
   const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-white dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
-  const labelClass = 'block text-sm font-medium light:text-gray-700 dark:text-gray-300 mb-1';
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold light:text-gray-800 dark:text-black">Danh mục</h2>
-        <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+        <button onClick={() => { resetForm(); setShowModal(true); }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2">
           <Plus size={16} /> Thêm
         </button>
       </div>
-
-      {(showForm || editingId) && (
-        <form onSubmit={handleCreate} className="light:bg-white dark:bg-gray-900 rounded-lg shadow p-6 mb-6 max-w-md space-y-4">
-          <div>
-            <label className={labelClass}>Tên danh mục</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} required className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Icon</label>
-            <input value={icon} onChange={(e) => setIcon(e.target.value)} className={inputClass} placeholder="food-icon" />
-          </div>
-          {error && <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>}
-          <div className="flex gap-3">
-            <button type="submit" disabled={loading} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-              {loading ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Lưu'}
-            </button>
-            <button type="button" onClick={() => { resetForm(); setShowForm(false); }} className="border light:border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg light:text-gray-700 dark:text-gray-300">Hủy</button>
-          </div>
-        </form>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((c) => (
@@ -144,6 +118,39 @@ export default function CategoryList() {
           <p className="light:text-gray-400 dark:text-gray-500 col-span-3 text-center py-8">Chưa có danh mục nào</p>
         )}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative">
+            <div className="flex justify-between items-center mb-5 border-b dark:border-gray-800 pb-3">
+              <h3 className="text-xl font-bold dark:text-white">{editingId ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}</h3>
+              <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Tên danh mục</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} required className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Icon</label>
+                <input value={icon} onChange={(e) => setIcon(e.target.value)} className={inputClass} placeholder="food-icon" />
+              </div>
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <div className="flex gap-3 pt-3">
+                <button type="submit" disabled={loading} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition disabled:opacity-50">
+                  {loading ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Lưu'}
+                </button>
+                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2.5 border rounded-lg dark:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
