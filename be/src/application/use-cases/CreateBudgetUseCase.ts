@@ -6,6 +6,7 @@ export interface CreateBudgetDTO {
   categoryId: string;
   walletId: string;
   limitAmount: number;
+  dueDate?: string | null;
 }
 
 export class CreateBudgetUseCase {
@@ -17,7 +18,7 @@ export class CreateBudgetUseCase {
       throw new Error('Danh mục này đã có budget!');
     }
 
-    const budget = new Budget(dto.categoryId, dto.walletId, dto.limitAmount, 0, dto.id);
+    const budget = new Budget(dto.categoryId, dto.walletId, dto.limitAmount, 0, dto.id, dto.dueDate ?? null);
     await this.budgetRepo.save(budget);
     return budget;
   }

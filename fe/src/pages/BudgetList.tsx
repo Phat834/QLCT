@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Plus, Pencil, Trash2, X, Wallet, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Wallet, AlertTriangle, Calendar } from 'lucide-react';
 
 export default function BudgetList() {
   const { budgets, categories, transactions, wallets, refetch } = useApp();
@@ -9,6 +9,7 @@ export default function BudgetList() {
   const [categoryId, setCategoryId] = useState('');
   const [walletId, setWalletId] = useState('');
   const [limitAmount, setLimitAmount] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
@@ -24,7 +25,28 @@ export default function BudgetList() {
       .reduce((sum, t) => sum + t.amount, 0);
   };
 
-  const resetForm = () => { setCategoryId(''); setWalletId(''); setLimitAmount(''); setEditingId(null); setError(''); };
+  const parseDueDate = (due?: string | null): Date | null => {
+    if (!due) return null;
+    const datePart = due.split('T')[0];
+    const parts = datePart.split('-').map(Number);
+    if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  };
+
+  const isDueDatePassed = (due?: string | null) => {
+    const d = parseDueDate(due);
+    if (!d) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d.getTime() <= today.getTime();
+  };
+
+  const formatDueDate = (due?: string | null) => {
+    const d = parseDueDate(due);
+    return d ? d.toLocaleDateString('vi-VN') : '';
+  };
+
+  const resetForm = () => { setCategoryId(''); setWalletId(''); setLimitAmount(''); setDueDate(''); setEditingId(null); setError(''); };
 
   const handleAddClick = () => {
     if (wallets.length === 0) return setShowWarning(true);
@@ -39,8 +61,8 @@ export default function BudgetList() {
     const url = editingId ? `http://localhost:3000/api/budgets/${editingId}` : 'http://localhost:3000/api/budgets';
     const method = editingId ? 'PUT' : 'POST';
     const body = editingId 
-      ? { categoryId, walletId, limitAmount: Number(limitAmount) } 
-      : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletId, limitAmount: Number(limitAmount) };
+      ? { categoryId, walletId, limitAmount: Number(limitAmount), dueDate: dueDate || null } 
+      : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletId, limitAmount: Number(limitAmount), dueDate: dueDate || null };
 
     try {
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -61,7 +83,7 @@ export default function BudgetList() {
   };
 
   const startEdit = (b: any) => {
-    setEditingId(b.id); setCategoryId(b.categoryId); setWalletId(b.walletId || ''); setLimitAmount(String(b.limitAmount));
+    setEditingId(b.id); setCategoryId(b.categoryId); setWalletId(b.walletId || ''); setLimitAmount(String(b.limitAmount)); setDueDate(b.dueDate || '');
     setError('');
     setShowModal(true);
   };
@@ -101,6 +123,8 @@ export default function BudgetList() {
           const progressColor = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-emerald-500';
           const badgeBg = pct >= 100 ? 'bg-red-500/10 text-red-400 border-red-500/20' : pct >= 80 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
 
+          const due = isDueDatePassed(b.dueDate);
+
           return (
             <div key={b.id} className="light:bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:border-gray-700 transition-all">
               
@@ -111,6 +135,11 @@ export default function BudgetList() {
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
                     <Wallet size={12} /> {wallet?.name || b.walletId}
                   </span>
+                  {b.dueDate && (
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${due ? 'bg-red-500/10 text-red-500 border border-red-500/30' : 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50'}`}>
+                      <Calendar size={12} /> Hẹn trả: {formatDueDate(b.dueDate)}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -180,6 +209,10 @@ export default function BudgetList() {
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Hạn mức (VNĐ)</label>
                 <input type="number" value={limitAmount} onChange={(e) => setLimitAmount(e.target.value)} required min={1} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Ngày hẹn trả (tuỳ chọn)</label>
+                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputClass} />
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <div className="flex gap-3 pt-3">
