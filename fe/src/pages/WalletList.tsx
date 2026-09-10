@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import CurrencyInput from '../components/CurrencyInput';
+import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 
 export default function WalletList() {
@@ -27,7 +29,7 @@ export default function WalletList() {
         const res = await fetch(`http://localhost:3000/api/wallets/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, balance: Number(balance) }),
+          body: JSON.stringify({ name, balance: parseCurrency(balance) }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
@@ -38,7 +40,7 @@ export default function WalletList() {
         const res = await fetch('http://localhost:3000/api/wallets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, name, balance: Number(balance) }),
+          body: JSON.stringify({ id, name, balance: parseCurrency(balance) }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
@@ -77,12 +79,12 @@ export default function WalletList() {
   const startEdit = (w: any) => {
     setEditingId(w.id);
     setName(w.name);
-    setBalance(String(w.balance));
+    setBalance(formatCurrency(String(w.balance)));
     setShowModal(true);
     setError('');
   };
 
-  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-white dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
+  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-gray-100 dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
 
   return (
     <div>
@@ -95,7 +97,7 @@ export default function WalletList() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {wallets.map((w) => (
-          <div key={w.id} className="light:bg-white dark:bg-gray-900 rounded-lg shadow p-5 flex justify-between items-start">
+          <div key={w.id} className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow p-5 flex justify-between items-start">
             <div>
               <h3 className="font-semibold light:text-gray-800 dark:text-white">{w.name}</h3>
               <p className="text-2xl font-bold light:text-gray-800 dark:text-white">{w.balance.toLocaleString('vi-VN')} VNĐ</p>
@@ -113,7 +115,7 @@ export default function WalletList() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative">
+          <div className="bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-800 relative">
             <div className="flex justify-between items-center mb-5 border-b dark:border-gray-800 pb-3">
               <h3 className="text-xl font-bold dark:text-white">{editingId ? 'Cập nhật ví' : 'Thêm ví mới'}</h3>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -128,7 +130,7 @@ export default function WalletList() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Số dư</label>
-                <input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} required min={0} className={inputClass} />
+                <CurrencyInput value={balance} onChange={setBalance} required min={0} className={inputClass} />
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <div className="flex gap-3 pt-3">

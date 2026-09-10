@@ -4,13 +4,15 @@ export class Budget {
   private walletId: string;
   private limitAmount: number;
   private currentSpent: number;
+  private dueDate: string | null;
 
-  constructor(categoryId: string, walletId: string, limitAmount: number, currentSpent: number, id: string) {
+  constructor(categoryId: string, walletId: string, limitAmount: number, currentSpent: number, id: string, dueDate: string | null = null) {
     this.id = id;
     this.categoryId = categoryId;
     this.walletId = walletId;
     this.limitAmount = limitAmount;
     this.currentSpent = currentSpent;
+    this.dueDate = dueDate;
   }
 
   public getId(): string {
@@ -31,6 +33,10 @@ export class Budget {
 
   public getCurrentSpent(): number {
     return this.currentSpent;
+  }
+
+  public getDueDate(): string | null {
+    return this.dueDate;
   }
 
   public addExpense(amount: number): void {

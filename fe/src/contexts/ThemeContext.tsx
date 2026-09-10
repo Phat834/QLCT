@@ -11,7 +11,7 @@ const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('qlct-theme');
+    const saved = localStorage.getItem('Financial Management-theme');
     if (saved === 'dark' || saved === 'light') return saved;
    
     return 'light';
@@ -21,7 +21,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-    localStorage.setItem('qlct-theme', theme);
+    localStorage.setItem('Financial Management-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

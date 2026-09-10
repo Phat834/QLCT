@@ -87,12 +87,12 @@ export class ApiController {
 
   async createBudget(req: Request, res: Response): Promise<void> {
     try {
-      const { id, categoryId, walletId, limitAmount } = req.body;
+      const { id, categoryId, walletId, limitAmount, dueDate } = req.body;
       if (!id || !categoryId || !walletId || limitAmount === undefined) {
         res.status(400).json({ error: 'Thiếu thông tin bắt buộc!' });
         return;
       }
-      const budget = await this.createBudgetUseCase.execute({ id, categoryId, walletId, limitAmount: Number(limitAmount) });
+      const budget = await this.createBudgetUseCase.execute({ id, categoryId, walletId, limitAmount: Number(limitAmount), dueDate: dueDate ?? null });
       res.status(201).json({ message: 'Tạo ngân sách thành công!', data: budget });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -102,12 +102,12 @@ export class ApiController {
   async updateBudget(req: Request, res: Response): Promise<void> {
     try {
       const id = String(req.params.id);
-      const { categoryId, walletId, limitAmount } = req.body;
+      const { categoryId, walletId, limitAmount, dueDate } = req.body;
       if (!id || !categoryId || limitAmount === undefined) {
         res.status(400).json({ error: 'Thiếu thông tin bắt buộc!' });
         return;
       }
-      const budget = await this.updateBudgetUseCase.execute({ id, categoryId, walletId, limitAmount: Number(limitAmount) });
+      const budget = await this.updateBudgetUseCase.execute({ id, categoryId, walletId, limitAmount: Number(limitAmount), dueDate: dueDate ?? null });
       res.status(200).json({ message: 'Cập nhật ngân sách thành công!', data: budget });
     } catch (error: any) {
       res.status(400).json({ error: error.message });

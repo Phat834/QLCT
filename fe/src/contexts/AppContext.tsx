@@ -30,6 +30,7 @@ export interface Budget {
   walletId: string;
   limitAmount: number;
   currentSpent: number;
+  dueDate?: string | null;
 }
 
 export interface ApiError {

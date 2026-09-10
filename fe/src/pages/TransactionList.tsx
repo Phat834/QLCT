@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
+import CurrencyInput from '../components/CurrencyInput';
+import { parseCurrency } from '../utils/currency';
 import { Plus, X } from 'lucide-react';
 
 export default function TransactionList() {
@@ -74,11 +76,11 @@ export default function TransactionList() {
       const id = 'tx_' + Math.random().toString(36).slice(2, 10);
 
       if (type === 'EXPENSE') {
-        await api.createExpense({ id, walletId, categoryId, amount: Number(amount), note });
-      } else if (type === 'INCOME') {
-        await api.createIncome({ id, walletId, categoryId, amount: Number(amount), note });
+        await api.createExpense({ id, walletId, categoryId, amount: parseCurrency(amount), note });
+       } else if (type === 'INCOME') {
+        await api.createIncome({ id, walletId, categoryId: categoryId || undefined, amount: parseCurrency(amount), note });
       } else {
-        await api.createTransfer({ id, fromWalletId, toWalletId, amount: Number(amount), note });
+        await api.createTransfer({ id, fromWalletId, toWalletId, amount: parseCurrency(amount), note });
       }
 
       resetForm();
@@ -94,7 +96,7 @@ export default function TransactionList() {
   if (loading) return <div className="text-center py-20 light:text-gray-600 dark:text-gray-400">Đang tải...</div>;
   if (error) return <div className="text-red-600 py-20">Lỗi: {error}</div>;
 
-  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-white dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
+  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-gray-100 dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
 
   return (
     <div>
@@ -105,7 +107,7 @@ export default function TransactionList() {
         </button>
       </div>
 
-      <div className="light:bg-white dark:bg-gray-900 rounded-lg shadow p-4 mb-4">
+      <div className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow p-4 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium light:text-gray-700 dark:text-gray-300 mb-1">Từ ngày</label>
@@ -137,7 +139,7 @@ export default function TransactionList() {
         </div>
       </div>
 
-      <div className="light:bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
+      <div className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow overflow-hidden">
         <table className="w-full text-sm">
           <thead className="light:bg-gray-50 dark:bg-gray-800 border-b light:border-gray-200 dark:border-gray-700">
             <tr>
@@ -169,7 +171,13 @@ export default function TransactionList() {
                   <td className={`px-4 py-3 font-medium ${tx.type === 'INCOME' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     {tx.type === 'INCOME' ? '+' : '-'}{tx.amount.toLocaleString('vi-VN')} VNĐ
                   </td>
-                  <td className="px-4 py-3 light:text-gray-600 dark:text-gray-400">{getCategoryName(tx.categoryId)}</td>
+                  <td className="px-4 py-3 light:text-gray-600 dark:text-gray-400">
+                    {tx.type === 'INCOME'
+                      ? 'Tiền vào'
+                      : tx.type === 'TRANSFER'
+                        ? 'Chuyển ví nội bộ'
+                        : getCategoryName(tx.categoryId)}
+                  </td>
                   <td className="px-4 py-3 light:text-gray-600 dark:text-gray-400">{getWalletName(tx.walletId)}</td>
                   <td className="px-4 py-3 light:text-gray-600 dark:text-gray-400">{tx.note || '-'}</td>
                   <td className="px-4 py-3 light:text-gray-500 dark:text-gray-500">{new Date(tx.createdAt).toLocaleDateString('vi-VN')}</td>
@@ -182,7 +190,7 @@ export default function TransactionList() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative">
+          <div className="bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-800 relative">
             <div className="flex justify-between items-center mb-5 border-b dark:border-gray-800 pb-3">
               <h3 className="text-xl font-bold dark:text-white">Thêm giao dịch mới</h3>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -202,7 +210,7 @@ export default function TransactionList() {
 
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Số tiền (VNĐ)</label>
-                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required min={1} className={inputClass} />
+                <CurrencyInput value={amount} onChange={setAmount} required min={1} className={inputClass} />
               </div>
 
               {type === 'TRANSFER' ? (
@@ -231,6 +239,7 @@ export default function TransactionList() {
                       {wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                     </select>
                   </div>
+                {type === 'EXPENSE' && (
                   <div>
                     <label className="block text-sm font-medium mb-1 dark:text-gray-300">Danh mục</label>
                     <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required className={inputClass}>
@@ -238,6 +247,7 @@ export default function TransactionList() {
                       {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
+                )}
                 </>
               )}
 

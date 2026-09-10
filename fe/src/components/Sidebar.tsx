@@ -12,9 +12,9 @@ const navItems = [
 export default function Sidebar() {
   return (
     /* Bỏ fixed, thêm flex-shrink-0 và h-screen (hoặc min-h-screen) */
-    <aside className="w-64 flex-shrink-0 h-screen bg-white border-r border-gray-200 flex flex-col">
+    <aside className="w-64 flex-shrink-0 h-screen bg-gray-100 border-r border-gray-200 flex flex-col">
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">QLCT</h1>
+        <h1 className="text-xl font-bold text-gray-800">Financial Management</h1>
         <p className="text-sm text-gray-500">Quản Lý Chi Tiêu</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">

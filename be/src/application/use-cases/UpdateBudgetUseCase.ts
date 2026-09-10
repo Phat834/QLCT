@@ -6,6 +6,7 @@ export interface UpdateBudgetDTO {
   categoryId: string;
   walletId?: string;
   limitAmount: number;
+  dueDate?: string | null;
 }
 
 export class UpdateBudgetUseCase {
@@ -16,7 +17,8 @@ export class UpdateBudgetUseCase {
     if (!existing) throw new Error('Không tìm thấy ngân sách!');
 
     const walletId = dto.walletId || existing.getWalletId();
-    const budget = new Budget(dto.categoryId, walletId, dto.limitAmount, existing.getCurrentSpent(), dto.id);
+    const dueDate = dto.dueDate !== undefined ? dto.dueDate : existing.getDueDate();
+    const budget = new Budget(dto.categoryId, walletId, dto.limitAmount, existing.getCurrentSpent(), dto.id, dueDate);
     await this.budgetRepo.save(budget);
     return budget;
   }

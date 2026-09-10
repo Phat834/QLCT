@@ -7,13 +7,11 @@ export default function CategoryList() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const resetForm = () => {
     setName('');
-    setIcon('');
     setEditingId(null);
     setError('');
   };
@@ -27,7 +25,7 @@ export default function CategoryList() {
         const res = await fetch(`http://localhost:3000/api/categories/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, icon: icon || 'default-icon' }),
+          body: JSON.stringify({ name }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
@@ -38,7 +36,7 @@ export default function CategoryList() {
         const res = await fetch('http://localhost:3000/api/categories', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, name, icon: icon || 'default-icon' }),
+          body: JSON.stringify({ id, name }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
@@ -77,12 +75,11 @@ export default function CategoryList() {
   const startEdit = (c: any) => {
     setEditingId(c.id);
     setName(c.name);
-    setIcon(c.icon || '');
     setShowModal(true);
     setError('');
   };
 
-  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-white dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
+  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-gray-100 dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
 
   return (
     <div>
@@ -95,11 +92,11 @@ export default function CategoryList() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((c) => (
-           <div key={c.id} className="light:bg-white dark:bg-gray-900 rounded-lg shadow p-5 flex items-center justify-between">
+           <div key={c.id} className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow p-5 flex items-center justify-between">
              <div className="flex items-center gap-4">
-               <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
-                 {c.name.charAt(0).toUpperCase()}
-               </div>
+                <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                  {c.name.charAt(0).toUpperCase()}
+                </div>
                <div>
                  <h3 className="font-semibold light:text-gray-800 dark:text-white">{c.name}</h3>
                </div>
@@ -121,7 +118,7 @@ export default function CategoryList() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative">
+          <div className="bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-800 relative">
             <div className="flex justify-between items-center mb-5 border-b dark:border-gray-800 pb-3">
               <h3 className="text-xl font-bold dark:text-white">{editingId ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}</h3>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -133,10 +130,6 @@ export default function CategoryList() {
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Tên danh mục</label>
                 <input value={name} onChange={(e) => setName(e.target.value)} required className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Icon</label>
-                <input value={icon} onChange={(e) => setIcon(e.target.value)} className={inputClass} placeholder="food-icon" />
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <div className="flex gap-3 pt-3">
