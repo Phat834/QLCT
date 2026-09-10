@@ -27,6 +27,6 @@ export const createTransferSchema = z.object({
 export const createBudgetSchema = z.object({
   id: z.string().min(1, 'Thiếu id'),
   categoryId: z.string().min(1, 'Thiếu danh mục'),
-  walletId: z.string().uuid('Ví không hợp lệ'),
+  walletIds: z.array(z.string()).min(1, 'Chọn ít nhất 1 ví'),
   limitAmount: z.number().positive('Hạn mức phải lớn hơn 0'),
 });

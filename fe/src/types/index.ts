@@ -24,7 +24,7 @@ export interface Transaction {
 export interface Budget {
   id: string;
   categoryId: string;
-  walletId: string;
+  walletIds: string[];
   limitAmount: number;
   currentSpent: number;
   dueDate?: string | null;
