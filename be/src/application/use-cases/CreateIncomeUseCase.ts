@@ -7,7 +7,7 @@ import { IWalletRepository } from '../../domain/repositories/IWalletRepository.j
 interface CreateIncomeDTO {
   id: string;
   walletId: string;
-  categoryId: string;
+  categoryId?: string | undefined;
   amount: number;
   note?: string | undefined;
 }

@@ -79,7 +79,7 @@ export default function CategoryList() {
     setError('');
   };
 
-  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-white dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
+  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-gray-100 dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
 
   return (
     <div>
@@ -92,7 +92,7 @@ export default function CategoryList() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((c) => (
-           <div key={c.id} className="light:bg-white dark:bg-gray-900 rounded-lg shadow p-5 flex items-center justify-between">
+           <div key={c.id} className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow p-5 flex items-center justify-between">
              <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
                   {c.name.charAt(0).toUpperCase()}
@@ -118,7 +118,7 @@ export default function CategoryList() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative">
+          <div className="bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-800 relative">
             <div className="flex justify-between items-center mb-5 border-b dark:border-gray-800 pb-3">
               <h3 className="text-xl font-bold dark:text-white">{editingId ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}</h3>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">

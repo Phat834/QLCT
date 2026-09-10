@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import CurrencyInput from '../components/CurrencyInput';
+import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X, Wallet, AlertTriangle, Calendar } from 'lucide-react';
 
 export default function BudgetList() {
@@ -18,9 +20,9 @@ export default function BudgetList() {
     const isSavings = categories.find(c => c.id === catId)?.name.toLowerCase().includes('tiết kiệm');
     return transactions
       .filter(t => wId ? (t.walletId === wId || t.targetWalletId === wId) : true)
-      .filter(t => isSavings 
+      .filter(t => isSavings
         ? ((t.type === 'INCOME' && t.categoryId === catId) || (t.type === 'TRANSFER' && t.targetWalletId === wId) || (t.type === 'EXPENSE' && t.categoryId === catId))
-        : (t.type === 'EXPENSE' && t.categoryId === catId && (wId ? t.walletId === wId : true))
+        : ((t.type === 'EXPENSE' && t.categoryId === catId && (wId ? t.walletId === wId : true)) || (t.type === 'TRANSFER' && !!wId && t.targetWalletId === wId))
       )
       .reduce((sum, t) => sum + t.amount, 0);
   };
@@ -61,8 +63,8 @@ export default function BudgetList() {
     const url = editingId ? `http://localhost:3000/api/budgets/${editingId}` : 'http://localhost:3000/api/budgets';
     const method = editingId ? 'PUT' : 'POST';
     const body = editingId 
-      ? { categoryId, walletId, limitAmount: Number(limitAmount), dueDate: dueDate || null } 
-      : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletId, limitAmount: Number(limitAmount), dueDate: dueDate || null };
+      ? { categoryId, walletId, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null } 
+      : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletId, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null };
 
     try {
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -83,12 +85,12 @@ export default function BudgetList() {
   };
 
   const startEdit = (b: any) => {
-    setEditingId(b.id); setCategoryId(b.categoryId); setWalletId(b.walletId || ''); setLimitAmount(String(b.limitAmount)); setDueDate(b.dueDate || '');
+    setEditingId(b.id); setCategoryId(b.categoryId); setWalletId(b.walletId || '');     setLimitAmount(formatCurrency(String(b.limitAmount))); setDueDate(b.dueDate || '');
     setError('');
     setShowModal(true);
   };
 
-  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-white dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
+  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-gray-100 dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -100,7 +102,7 @@ export default function BudgetList() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="light:bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5 flex items-center gap-4">
+        <div className="light:bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5 flex items-center gap-4">
           <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500"><Wallet size={24} /></div>
           <div>
             <span className="text-xs font-medium light:text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Tổng số dư</span>
@@ -126,7 +128,7 @@ export default function BudgetList() {
           const due = isDueDatePassed(b.dueDate);
 
           return (
-            <div key={b.id} className="light:bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:border-gray-700 transition-all">
+            <div key={b.id} className="light:bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:border-gray-700 transition-all">
               
               {/* Dòng 1: Tên danh mục, Ví & Nút Thao tác */}
               <div className="flex items-center justify-between mb-3">
@@ -183,7 +185,7 @@ export default function BudgetList() {
       {/* POP-UP MODAL FORM */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-gray-800 relative">
+          <div className="bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-800 relative">
             <div className="flex justify-between items-center mb-5 border-b dark:border-gray-800 pb-3">
               <h3 className="text-xl font-bold dark:text-white">{editingId ? 'Cập nhật ngân sách' : 'Thêm ngân sách mới'}</h3>
               <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -208,7 +210,7 @@ export default function BudgetList() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Hạn mức (VNĐ)</label>
-                <input type="number" value={limitAmount} onChange={(e) => setLimitAmount(e.target.value)} required min={1} className={inputClass} />
+                <CurrencyInput value={limitAmount} onChange={setLimitAmount} required min={1} className={inputClass} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Ngày hẹn trả (tuỳ chọn)</label>
@@ -231,7 +233,7 @@ export default function BudgetList() {
       {/* POP-UP MODAL CẢNH BÁO */}
       {showWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 max-w-xs w-full shadow-2xl text-center flex flex-col items-center">
+          <div className="bg-gray-100 dark:bg-gray-900 rounded-3xl p-6 max-w-xs w-full shadow-2xl text-center flex flex-col items-center">
             <div className="w-20 h-20 mb-5 bg-amber-100/80 rounded-2xl flex items-center justify-center">
               <AlertTriangle className="w-12 h-12 text-amber-500 stroke-[2.5]" />
             </div>

@@ -35,7 +35,7 @@ export default function Dashboard() {
       </div>
 
       <h3 className="text-lg font-semibold light:text-gray-700 dark:text-black-300 mb-4">Giao dịch gần đây</h3>
-      <div className="light:bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
+      <div className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow overflow-hidden">
         <table className="w-full text-sm">
           <thead className="light:bg-gray-50 dark:bg-gray-800 border-b light:border-gray-200 dark:border-gray-700">
             <tr>
@@ -68,7 +68,13 @@ export default function Dashboard() {
                     {tx.type === 'INCOME' ? '+' : '-'}{tx.amount.toLocaleString('vi-VN')} VNĐ
                   </td>
                   <td className="px-4 py-3 light:text-gray-600 dark:text-gray-400">{getWalletName(tx.walletId)}</td>
-                  <td className="px-4 py-3 light:text-gray-600 dark:text-gray-400">{getCategoryName(tx.categoryId)}</td>
+                  <td className="px-4 py-3 light:text-gray-600 dark:text-gray-400">
+                    {tx.type === 'INCOME'
+                      ? 'Tiền vào'
+                      : tx.type === 'TRANSFER'
+                        ? 'Chuyển ví nội bộ'
+                        : getCategoryName(tx.categoryId)}
+                  </td>
                   <td className="px-4 py-3 light:text-gray-600 dark:text-gray-400">{tx.note || '-'}</td>
                   <td className="px-4 py-3 light:text-gray-500 dark:text-gray-500">{new Date(tx.createdAt).toLocaleDateString('vi-VN')}</td>
                 </tr>
@@ -88,7 +94,7 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: s
     red: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
   };
   return (
-    <div className="light:bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+    <div className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow p-6">
       <div className="flex items-center gap-3 mb-3">
         <div className={`p-2 rounded-lg ${colorMap[color]}`}>
           <Icon size={24} />
