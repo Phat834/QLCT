@@ -4,7 +4,7 @@ import { Budget } from '../../domain/entities/Budget.js';
 export interface CreateBudgetDTO {
   id: string;
   categoryId: string;
-  walletId: string;
+  walletIds: string[];
   limitAmount: number;
   dueDate?: string | null;
 }
@@ -18,7 +18,7 @@ export class CreateBudgetUseCase {
       throw new Error('Danh mục này đã có budget!');
     }
 
-    const budget = new Budget(dto.categoryId, dto.walletId, dto.limitAmount, 0, dto.id, dto.dueDate ?? null);
+    const budget = new Budget(dto.categoryId, dto.walletIds, dto.limitAmount, 0, dto.id, dto.dueDate ?? null);
     await this.budgetRepo.save(budget);
     return budget;
   }

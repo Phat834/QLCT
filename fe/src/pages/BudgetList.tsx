@@ -9,21 +9,38 @@ export default function BudgetList() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState('');
-  const [walletId, setWalletId] = useState('');
+  const [walletIds, setWalletIds] = useState<string[]>([]);
   const [limitAmount, setLimitAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [, forceRefresh] = useState(0);
 
-  const getActualSpent = (catId: string, wId?: string) => {
+  const STORAGE_KEY = 'budgetReset_';
+
+  const getResetBaseline = (budgetId: string): number => {
+    const stored = localStorage.getItem(STORAGE_KEY + budgetId);
+    return stored ? Number(stored) : 0;
+  };
+
+  const resetBudget = (budgetId: string, currentSpent: number) => {
+    localStorage.setItem(STORAGE_KEY + budgetId, String(currentSpent));
+    forceRefresh((n) => n + 1);
+  };
+
+  const getActualSpent = (catId: string, walletIds?: string[]) => {
+    const ids = walletIds || [];
     const isSavings = categories.find(c => c.id === catId)?.name.toLowerCase().includes('tiết kiệm');
+
+    if (isSavings) {
+      return wallets
+        .filter((w) => ids.includes(w.id))
+        .reduce((sum, w) => sum + w.balance, 0);
+    }
+
     return transactions
-      .filter(t => wId ? (t.walletId === wId || t.targetWalletId === wId) : true)
-      .filter(t => isSavings
-        ? ((t.type === 'INCOME' && t.categoryId === catId) || (t.type === 'TRANSFER' && t.targetWalletId === wId) || (t.type === 'EXPENSE' && t.categoryId === catId))
-        : ((t.type === 'EXPENSE' && t.categoryId === catId && (wId ? t.walletId === wId : true)) || (t.type === 'TRANSFER' && !!wId && t.targetWalletId === wId))
-      )
+      .filter(t => t.type === 'EXPENSE' && t.categoryId === catId && (ids.length > 0 ? ids.includes(t.walletId) : true))
       .reduce((sum, t) => sum + t.amount, 0);
   };
 
@@ -48,7 +65,7 @@ export default function BudgetList() {
     return d ? d.toLocaleDateString('vi-VN') : '';
   };
 
-  const resetForm = () => { setCategoryId(''); setWalletId(''); setLimitAmount(''); setDueDate(''); setEditingId(null); setError(''); };
+  const resetForm = () => { setCategoryId(''); setWalletIds([]); setLimitAmount(''); setDueDate(''); setEditingId(null); setError(''); };
 
   const handleAddClick = () => {
     if (wallets.length === 0) return setShowWarning(true);
@@ -62,9 +79,9 @@ export default function BudgetList() {
     setLoading(true);
     const url = editingId ? `http://localhost:3000/api/budgets/${editingId}` : 'http://localhost:3000/api/budgets';
     const method = editingId ? 'PUT' : 'POST';
-    const body = editingId 
-      ? { categoryId, walletId, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null } 
-      : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletId, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null };
+    const body = editingId
+      ? { categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null }
+      : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null };
 
     try {
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -85,7 +102,7 @@ export default function BudgetList() {
   };
 
   const startEdit = (b: any) => {
-    setEditingId(b.id); setCategoryId(b.categoryId); setWalletId(b.walletId || '');     setLimitAmount(formatCurrency(String(b.limitAmount))); setDueDate(b.dueDate || '');
+    setEditingId(b.id); setCategoryId(b.categoryId); setWalletIds(b.walletIds || []);     setLimitAmount(formatCurrency(String(b.limitAmount))); setDueDate(b.dueDate || '');
     setError('');
     setShowModal(true);
   };
@@ -117,8 +134,10 @@ export default function BudgetList() {
       <div className="space-y-4">
         {budgets.map((b) => {
           const cat = categories.find((c) => c.id === b.categoryId);
-          const wallet = wallets.find((w) => w.id === b.walletId);
-          const spent = getActualSpent(b.categoryId, b.walletId);
+          const budgetWallets = wallets.filter((w) => b.walletIds.includes(w.id));
+          const rawSpent = getActualSpent(b.categoryId, b.walletIds);
+          const baseline = getResetBaseline(b.id);
+          const spent = Math.max(0, rawSpent - baseline);
           const pct = b.limitAmount > 0 ? (spent / b.limitAmount) * 100 : 0;
           
           // Màu sắc trạng thái tiến độ
@@ -134,9 +153,9 @@ export default function BudgetList() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <h3 className="font-bold text-lg light:text-gray-800 dark:text-gray-100">{cat?.name || b.categoryId}</h3>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
-                    <Wallet size={12} /> {wallet?.name || b.walletId}
-                  </span>
+                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+                     <Wallet size={12} /> {budgetWallets.length > 0 ? budgetWallets.map((w) => w.name).join(', ') : 'Chưa chọn ví'}
+                   </span>
                   {b.dueDate && (
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${due ? 'bg-red-500/10 text-red-500 border border-red-500/30' : 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50'}`}>
                       <Calendar size={12} /> Hẹn trả: {formatDueDate(b.dueDate)}
@@ -145,6 +164,15 @@ export default function BudgetList() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {pct >= 100 && (
+                    <button
+                      onClick={() => resetBudget(b.id, spent)}
+                      className="px-2 py-1 text-xs text-white bg-amber-500 hover:bg-amber-400 rounded transition"
+                      title="Reset về 0"
+                    >
+                      Reset
+                    </button>
+                  )}
                   <button onClick={() => startEdit(b)} className="p-1.5 text-gray-400 hover:text-indigo-400 hover:bg-gray-800 rounded-lg transition"><Pencil size={15} /></button>
                   <button onClick={() => handleDelete(b.id)} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition"><Trash2 size={15} /></button>
                 </div>
@@ -202,11 +230,29 @@ export default function BudgetList() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Ví</label>
-                <select value={walletId} onChange={(e) => setWalletId(e.target.value)} required className={inputClass}>
-                  <option value="">Chọn...</option>
-                  {wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-                </select>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Chọn ví</label>
+                <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-2">
+                  {wallets.map((w) => (
+                    <label key={w.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={walletIds.includes(w.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setWalletIds([...walletIds, w.id]);
+                          } else {
+                            setWalletIds(walletIds.filter((id) => id !== w.id));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="light:text-gray-800 dark:text-white text-sm">{w.name}</span>
+                    </label>
+                  ))}
+                  {wallets.length === 0 && (
+                    <p className="text-gray-400 text-xs">Chưa có ví nào</p>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Hạn mức (VNĐ)</label>
