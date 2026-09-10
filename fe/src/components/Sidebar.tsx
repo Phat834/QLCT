@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Wallet, LayoutDashboard, List, PiggyBank } from 'lucide-react';
+import { Wallet, LayoutDashboard, List, PiggyBank, Play } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -11,30 +11,41 @@ const navItems = [
 
 export default function Sidebar() {
   return (
-    /* Bỏ fixed, thêm flex-shrink-0 và h-screen (hoặc min-h-screen) */
-    <aside className="w-64 flex-shrink-0 h-screen bg-gray-100 border-r border-gray-200 flex flex-col">
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">Financial Management</h1>
-        <p className="text-sm text-gray-500">Quản Lý Chi Tiêu</p>
-      </div>
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`
-            }
-          >
-            <Icon size={20} />
-            {label}
-          </NavLink>
-        ))}
-      </nav>
-    </aside>
+    <>
+      {/* Nút Video ẩn ở góc trên bên phải màn hình */}
+      <NavLink
+        to="/youtube"
+        title=""
+        className="fixed top-3 right-3 z-50 p-1.5 rounded-full text-gray-500 opacity-10 hover:opacity-80 transition-all duration-300 focus:outline-none"
+      >
+        <Play size={14} className="fill-current" />
+      </NavLink>
+
+      {/* Thanh Sidebar chính */}
+      <aside className="w-64 flex-shrink-0 h-screen bg-gray-100 border-r border-gray-200 flex flex-col">
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-xl font-bold text-gray-800">Financial Management</h1>
+          <p className="text-sm text-gray-500">Quản Lý Chi Tiêu</p>
+        </div>
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`
+              }
+            >
+              <Icon size={20} />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+    </>
   );
 }

@@ -7,6 +7,7 @@ import TransactionList from './pages/TransactionList';
 import WalletList from './pages/WalletList';
 import CategoryList from './pages/CategoryList';
 import BudgetList from './pages/BudgetList';
+import YoutubeLinks from './pages/YoutubeLinks';
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
       { path: 'wallets', element: <WalletList /> },
       { path: 'categories', element: <CategoryList /> },
       { path: 'budgets', element: <BudgetList /> },
+      { path: 'youtube', element: <YoutubeLinks /> },
     ],
   },
 ]);
