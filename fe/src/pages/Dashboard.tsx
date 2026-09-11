@@ -2,7 +2,7 @@ import { useApp } from '../contexts/AppContext';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 
 export default function Dashboard() {
-  const { wallets, transactions, categories, loading, error } = useApp();
+  const { wallets, transactions, categories, budgets, loading, error } = useApp();
 
   if (loading) return <div className="text-center py-20 light:text-gray-500 dark:text-gray-400">Đang tải...</div>;
   if (error) return <div className="text-red-600 py-20">Lỗi: {error}</div>;
@@ -13,7 +13,21 @@ export default function Dashboard() {
   const totalExpense = transactions
     .filter((t) => t.type === 'EXPENSE')
     .reduce((sum, t) => sum + t.amount, 0);
-  const totalBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
+
+  const savingsWalletIds = new Set<string>();
+  budgets.forEach((b) => {
+    const catName = categories.find((c) => c.id === b.categoryId)?.name || '';
+    if (catName.toLowerCase().includes('tiết kiệm')) {
+      b.walletIds.forEach((wid) => savingsWalletIds.add(wid));
+    }
+  });
+
+  const savingsBalance = wallets
+    .filter((w) => savingsWalletIds.has(w.id))
+    .reduce((sum, w) => sum + w.balance, 0);
+  const availableBalance = wallets
+    .filter((w) => !savingsWalletIds.has(w.id))
+    .reduce((sum, w) => sum + w.balance, 0);
 
   const getWalletName = (walletId: string) => {
     return wallets.find((w) => w.id === walletId)?.name || walletId;
@@ -28,10 +42,11 @@ export default function Dashboard() {
     <div>
       <h2 className="text-2xl font-bold light:text-gray-800 dark:text-black mb-6">Dashboard</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatCard label="Tổng số dư" value={totalBalance.toLocaleString('vi-VN') + ' VNĐ'} icon={Wallet} color="blue" />
-        <StatCard label="Thu nhập" value={totalIncome.toLocaleString('vi-VN') + ' VNĐ'} icon={TrendingUp} color="green" />
-        <StatCard label="Chi tiêu" value={totalExpense.toLocaleString('vi-VN') + ' VNĐ'} icon={TrendingDown} color="red" />
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+         <StatCard label="Số dư khả dụng" value={availableBalance.toLocaleString('vi-VN') + ' VNĐ'} icon={Wallet} color="blue" />
+         <StatCard label="Số dư tiết kiệm" value={savingsBalance.toLocaleString('vi-VN') + ' VNĐ'} icon={Wallet} color="purple" />
+         <StatCard label="Thu nhập" value={totalIncome.toLocaleString('vi-VN') + ' VNĐ'} icon={TrendingUp} color="green" />
+         <StatCard label="Chi tiêu" value={totalExpense.toLocaleString('vi-VN') + ' VNĐ'} icon={TrendingDown} color="red" />
       </div>
 
       <h3 className="text-lg font-semibold light:text-gray-700 dark:text-black-300 mb-4">Giao dịch gần đây</h3>
@@ -92,6 +107,7 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: s
     blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
     green: 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400',
     red: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
   };
   return (
     <div className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow p-6">

@@ -1,10 +1,19 @@
+import { WalletType } from '../enums/WalletType.js';
+
 export class Wallet {
   private id: string;
   private name: string;
   private balance: number;
   private createdAt: Date;
+  private type: WalletType;
 
-  constructor(id: string, name: string, initialBalance: number, createdAt?: Date) {
+  constructor(
+    id: string,
+    name: string,
+    initialBalance: number,
+    createdAt?: Date,
+    type: WalletType = WalletType.AVAILABLE
+  ) {
     if (initialBalance < 0) {
       throw new Error("Số dư ban đầu không được âm");
     }
@@ -12,6 +21,7 @@ export class Wallet {
     this.name = name;
     this.balance = initialBalance;
     this.createdAt = createdAt || new Date();
+    this.type = type;
   }
 
   // --- GETTERS ---
@@ -29,6 +39,10 @@ export class Wallet {
 
   public getCreatedAt(): Date {
     return this.createdAt;
+  }
+
+  public getType(): WalletType {
+    return this.type;
   }
 
   // --- DOMAIN BUSINESS LOGIC ---

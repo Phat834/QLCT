@@ -3,6 +3,7 @@ import { CreateWalletUseCase } from '../../application/use-cases/CreateWalletUse
 import { UpdateWalletUseCase } from '../../application/use-cases/UpdateWalletUseCase.js';
 import { DeleteWalletUseCase } from '../../application/use-cases/DeleteWalletUseCase.js';
 import { SupabaseWalletRepository } from '../../infrastructure/database/SupabaseWalletRepository.js';
+import { WalletType } from '../../domain/enums/WalletType.js';
 
 const walletRepo = new SupabaseWalletRepository();
 const createWalletUseCase = new CreateWalletUseCase(walletRepo);
@@ -12,12 +13,13 @@ const deleteWalletUseCase = new DeleteWalletUseCase(walletRepo);
 export class WalletController {
   async createWallet(req: Request, res: Response): Promise<void> {
     try {
-      const { id, name, balance } = req.body;
+      const { id, name, balance, type } = req.body;
       if (!id || !name || balance === undefined) {
         res.status(400).json({ error: 'Thiếu thông tin bắt buộc!' });
         return;
       }
-      const wallet = await createWalletUseCase.execute({ id, name, balance: Number(balance) });
+      const walletType = type && Object.values(WalletType).includes(type) ? type : WalletType.AVAILABLE;
+      const wallet = await createWalletUseCase.execute({ id, name, balance: Number(balance), type: walletType });
       res.status(201).json({ message: 'Tạo ví thành công!', data: wallet });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -27,12 +29,13 @@ export class WalletController {
   async updateWallet(req: Request, res: Response): Promise<void> {
     try {
       const id = String(req.params.id);
-      const { name, balance } = req.body;
+      const { name, balance, type } = req.body;
       if (!id || !name || balance === undefined) {
         res.status(400).json({ error: 'Thiếu thông tin bắt buộc!' });
         return;
       }
-      const wallet = await updateWalletUseCase.execute({ id, name, balance: Number(balance) });
+      const walletType = type && Object.values(WalletType).includes(type) ? type : WalletType.AVAILABLE;
+      const wallet = await updateWalletUseCase.execute({ id, name, balance: Number(balance), type: walletType });
       res.status(200).json({ message: 'Cập nhật ví thành công!', data: wallet });
     } catch (error: any) {
       res.status(400).json({ error: error.message });

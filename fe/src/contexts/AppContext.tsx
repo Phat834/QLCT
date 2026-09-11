@@ -1,10 +1,13 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
+export type WalletType = 'AVAILABLE' | 'SAVINGS';
+
 export interface Wallet {
   id: string;
   name: string;
   balance: number;
   createdAt: string;
+  type: WalletType;
 }
 
 export interface Category {

@@ -4,6 +4,8 @@ import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 
+type WalletType = 'AVAILABLE' | 'SAVINGS';
+
 export default function WalletList() {
   const { wallets, refetch } = useApp();
   const [showModal, setShowModal] = useState(false);
@@ -12,10 +14,12 @@ export default function WalletList() {
   const [balance, setBalance] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [type, setType] = useState<WalletType>('AVAILABLE');
 
   const resetForm = () => {
     setName('');
     setBalance('');
+    setType('AVAILABLE');
     setEditingId(null);
     setError('');
   };
@@ -29,7 +33,7 @@ export default function WalletList() {
         const res = await fetch(`http://localhost:3000/api/wallets/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, balance: parseCurrency(balance) }),
+          body: JSON.stringify({ name, balance: parseCurrency(balance), type }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
@@ -40,7 +44,7 @@ export default function WalletList() {
         const res = await fetch('http://localhost:3000/api/wallets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, name, balance: parseCurrency(balance) }),
+          body: JSON.stringify({ id, name, balance: parseCurrency(balance), type }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
@@ -80,6 +84,7 @@ export default function WalletList() {
     setEditingId(w.id);
     setName(w.name);
     setBalance(formatCurrency(String(w.balance)));
+    setType(w.type || 'AVAILABLE');
     setShowModal(true);
     setError('');
   };
@@ -98,10 +103,19 @@ export default function WalletList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {wallets.map((w) => (
           <div key={w.id} className="light:bg-gray-100 dark:bg-gray-900 rounded-lg shadow p-5 flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold light:text-gray-800 dark:text-white">{w.name}</h3>
-              <p className="text-2xl font-bold light:text-gray-800 dark:text-white">{w.balance.toLocaleString('vi-VN')} VNĐ</p>
-            </div>
+             <div>
+               <h3 className="font-semibold light:text-gray-800 dark:text-white flex items-center gap-2">
+                 {w.name}
+                 <span className={`text-xs px-2 py-0.5 rounded ${
+                   w.type === 'SAVINGS'
+                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                     : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                 }`}>
+                   {w.type === 'SAVINGS' ? 'Tiết kiệm' : 'Khả dụng'}
+                 </span>
+               </h3>
+               <p className="text-2xl font-bold light:text-gray-800 dark:text-white">{w.balance.toLocaleString('vi-VN')} VNĐ</p>
+             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => startEdit(w)} className="text-indigo-600 hover:text-indigo-800"><Pencil size={16} /></button>
               <button onClick={() => handleDelete(w.id)} className="text-red-600 hover:text-red-800"><Trash2 size={16} /></button>
@@ -131,6 +145,13 @@ export default function WalletList() {
               <div>
                 <label className="block text-sm font-medium mb-1 dark:text-gray-300">Số dư</label>
                 <CurrencyInput value={balance} onChange={setBalance} required min={0} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Loại ví</label>
+                <select value={type} onChange={(e) => setType(e.target.value as WalletType)} className={inputClass}>
+                  <option value="AVAILABLE">Số dư khả dụng</option>
+                  <option value="SAVINGS">Số dư tiết kiệm</option>
+                </select>
               </div>
               {error && <p className="text-red-500 text-sm">{error}</p>}
               <div className="flex gap-3 pt-3">

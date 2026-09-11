@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { Wallet } from '../../domain/entities/Wallet.js';
+import { WalletType } from '../../domain/enums/WalletType.js';
 import { IWalletRepository } from '../../domain/repositories/IWalletRepository.js';
 
 export class SupabaseWalletRepository implements IWalletRepository {
@@ -11,6 +12,7 @@ export class SupabaseWalletRepository implements IWalletRepository {
         name: wallet.getName(),
         balance: wallet.getBalance(),
         created_at: wallet.getCreatedAt().toISOString(),
+        type: wallet.getType(),
       });
 
     if (error) {
@@ -37,7 +39,8 @@ export class SupabaseWalletRepository implements IWalletRepository {
       data.id,
       data.name,
       Number(data.balance),
-      new Date(data.created_at)
+      new Date(data.created_at),
+      data.type || WalletType.AVAILABLE
     );
   }
 
@@ -49,7 +52,14 @@ export class SupabaseWalletRepository implements IWalletRepository {
     }
 
     return data.map(
-      (item) => new Wallet(item.id, item.name, Number(item.balance), new Date(item.created_at))
+      (item) =>
+        new Wallet(
+          item.id,
+          item.name,
+          Number(item.balance),
+          new Date(item.created_at),
+          item.type || WalletType.AVAILABLE
+        )
     );
   }
 
