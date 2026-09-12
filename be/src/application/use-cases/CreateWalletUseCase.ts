@@ -1,17 +1,19 @@
 import { IWalletRepository } from '../../domain/repositories/IWalletRepository.js';
 import { Wallet } from '../../domain/entities/Wallet.js';
+import { WalletType } from '../../domain/enums/WalletType.js';
 
 export interface CreateWalletDTO {
   id: string;
   name: string;
   balance: number;
+  type: WalletType;
 }
 
 export class CreateWalletUseCase {
   constructor(private walletRepo: IWalletRepository) {}
 
   async execute(dto: CreateWalletDTO): Promise<Wallet> {
-    const wallet = new Wallet(dto.id, dto.name, dto.balance);
+    const wallet = new Wallet(dto.id, dto.name, dto.balance, undefined, dto.type);
     await this.walletRepo.save(wallet);
     return wallet;
   }

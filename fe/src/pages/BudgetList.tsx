@@ -89,7 +89,7 @@ export default function BudgetList() {
       resetForm();
       setShowModal(false);
       await refetch();
-    } catch (err: any) { setError(err.message); } 
+    } catch (err: any) { setError(err.message); }
     finally { setLoading(false); }
   };
 
@@ -102,62 +102,67 @@ export default function BudgetList() {
   };
 
   const startEdit = (b: any) => {
-    setEditingId(b.id); setCategoryId(b.categoryId); setWalletIds(b.walletIds || []);     setLimitAmount(formatCurrency(String(b.limitAmount))); setDueDate(b.dueDate || '');
+    setEditingId(b.id);
+    setCategoryId(b.categoryId);
+    setWalletIds(b.walletIds || []);
+    setLimitAmount(formatCurrency(String(b.limitAmount)));
+    setDueDate(b.dueDate ? b.dueDate.split('T')[0] : '');
     setError('');
     setShowModal(true);
   };
 
-  const inputClass = 'w-full border rounded-lg px-3 py-2 light:bg-gray-100 dark:bg-gray-800 light:border-gray-300 dark:border-gray-600 light:text-gray-800 dark:text-white';
+  const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#1a1f2b] border-gray-600 text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50';
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#0b0e14] text-slate-200 font-sans">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold light:text-gray-800 dark:text-black">Ngân sách</h2>
-        <button onClick={handleAddClick} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2 font-medium">
+        <h2 className="text-2xl font-bold text-slate-200 font-mono tracking-wide">Ngân sách</h2>
+        <button
+          onClick={handleAddClick}
+          className="bg-cyan-500 hover:bg-cyan-400 text-[#0b0e14] font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
+        >
           <Plus size={16} /> Thêm
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="light:bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5 flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500"><Wallet size={24} /></div>
+      {/* Thẻ thống kê số dư */}
+      <div className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 overflow-hidden backdrop-blur-md mb-8 p-5">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400"><Wallet size={24} /></div>
           <div>
-            <span className="text-xs font-medium light:text-gray-500 dark:text-gray-400 uppercase tracking-wider block">Tổng số dư</span>
-            <p className="text-xl font-bold light:text-gray-800 dark:text-white mt-0.5">
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider block font-mono">Tổng số dư</span>
+            <p className="text-xl font-bold text-slate-200 mt-0.5 font-mono">
               {wallets.reduce((s, w) => s + w.balance, 0).toLocaleString('vi-VN')} VNĐ
             </p>
           </div>
         </div>
       </div>
 
-      {/* Danh sách Ngân Sách - Đã tối ưu hiển thị số liệu */}
+      {/* Danh sách Ngân Sách */}
       <div className="space-y-4">
         {budgets.map((b) => {
           const cat = categories.find((c) => c.id === b.categoryId);
-          const budgetWallets = wallets.filter((w) => b.walletIds.includes(w.id));
-          const rawSpent = getActualSpent(b.categoryId, b.walletIds);
+          const budgetWallets = wallets.filter((w) => (b as any).walletIds?.includes(w.id) || (b as any).walletIds?.includes(w.id));
+          const rawSpent = getActualSpent(b.categoryId, (b as any).walletIds || []);
           const baseline = getResetBaseline(b.id);
           const spent = Math.max(0, rawSpent - baseline);
           const pct = b.limitAmount > 0 ? (spent / b.limitAmount) * 100 : 0;
-          
-          // Màu sắc trạng thái tiến độ
+
           const progressColor = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-emerald-500';
-          const badgeBg = pct >= 100 ? 'bg-red-500/10 text-red-400 border-red-500/20' : pct >= 80 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+          const badgeBg = pct >= 100 ? 'bg-red-500/10 text-red-400 border border-red-500/30' : pct >= 80 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
 
           const due = isDueDatePassed(b.dueDate);
 
           return (
-            <div key={b.id} className="light:bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-sm p-5 hover:border-gray-700 transition-all">
-              
-              {/* Dòng 1: Tên danh mục, Ví & Nút Thao tác */}
+            <div key={b.id} className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 p-5 hover:border-cyan-400 transition-colors backdrop-blur-md">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <h3 className="font-bold text-lg light:text-gray-800 dark:text-gray-100">{cat?.name || b.categoryId}</h3>
-                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
-                     <Wallet size={12} /> {budgetWallets.length > 0 ? budgetWallets.map((w) => w.name).join(', ') : 'Chưa chọn ví'}
-                   </span>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h3 className="font-bold text-lg text-slate-200 font-mono">{cat?.name || b.categoryId}</h3>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-950/60 text-indigo-400 border border-indigo-800">
+                    <Wallet size={12} /> {budgetWallets.length > 0 ? budgetWallets.map((w) => w.name).join(', ') : 'Chưa chọn ví'}
+                  </span>
                   {b.dueDate && (
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${due ? 'bg-red-500/10 text-red-500 border border-red-500/30' : 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50'}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${due ? 'bg-red-500/10 text-red-400 border border-red-500/30' : 'bg-sky-500/10 text-sky-400 border border-sky-500/30'}`}>
                       <Calendar size={12} /> Hẹn trả: {formatDueDate(b.dueDate)}
                     </span>
                   )}
@@ -167,71 +172,84 @@ export default function BudgetList() {
                   {pct >= 100 && (
                     <button
                       onClick={() => resetBudget(b.id, spent)}
-                      className="px-2 py-1 text-xs text-white bg-amber-500 hover:bg-amber-400 rounded transition"
+                      className="px-2 py-1 text-xs text-white bg-amber-500 hover:bg-amber-400 rounded font-mono transition"
                       title="Reset về 0"
                     >
                       Reset
                     </button>
                   )}
-                  <button onClick={() => startEdit(b)} className="p-1.5 text-gray-400 hover:text-indigo-400 hover:bg-gray-800 rounded-lg transition"><Pencil size={15} /></button>
-                  <button onClick={() => handleDelete(b.id)} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition"><Trash2 size={15} /></button>
+                  <button
+                    onClick={() => startEdit(b)}
+                    className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
+                    title="Sửa"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(b.id)}
+                    className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
+                    title="Xoá"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               </div>
 
-              {/* Dòng 2: Hiển thị Số tiền RÕ RÀNG & NỔI BẬT */}
               <div className="flex items-baseline justify-between mb-2">
                 <div className="flex items-baseline gap-1.5">
-                  {/* Số tiền đã dùng: To + Đậm + Sáng */}
-                  <span className="text-lg font-bold light:text-gray-900 dark:text-white">
+                  <span className="text-lg font-bold text-slate-200 font-mono">
                     {spent.toLocaleString('vi-VN')}
                   </span>
-                  {/* Hạn mức: Nhạt hơn để tạo tương phản tầng bậc */}
-                  <span className="text-sm font-medium text-gray-400 dark:text-gray-400">
+                  <span className="text-sm font-medium text-slate-400">
                     / {b.limitAmount.toLocaleString('vi-VN')} VNĐ
                   </span>
                 </div>
-
-                {/* % Tiến độ: Được đóng khung nổi bật */}
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${badgeBg}`}>
                   {pct.toFixed(1)}%
                 </span>
               </div>
 
-              {/* Dòng 3: Thanh Progress Bar nổi bật */}
-              <div className="w-full light:bg-gray-200 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden p-0.5">
-                <div 
-                  className={`${progressColor} h-full rounded-full transition-all duration-300`} 
-                  style={{ width: `${Math.min(pct, 100)}%` }} 
+              <div className="w-full bg-[#1a1f2b] rounded-full h-2.5 overflow-hidden p-0.5">
+                <div
+                  className={`${progressColor} h-full rounded-full transition-all duration-300`}
+                  style={{ width: `${Math.min(pct, 100)}%` }}
                 />
               </div>
-
             </div>
           );
         })}
+        {budgets.length === 0 && (
+          <p className="text-slate-400 font-mono text-center py-8">Chưa có ngân sách nào</p>
+        )}
       </div>
 
       {/* POP-UP MODAL FORM */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-800 relative">
-            <div className="flex justify-between items-center mb-5 border-b dark:border-gray-800 pb-3">
-              <h3 className="text-xl font-bold dark:text-white">{editingId ? 'Cập nhật ngân sách' : 'Thêm ngân sách mới'}</h3>
-              <button onClick={() => { setShowModal(false); resetForm(); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <div className="bg-[#0d121c] border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-cyan-950/30">
+            <div className="flex justify-between items-center mb-5 border-b border-cyan-500/20 pb-3">
+              <h3 className="text-xl font-bold text-cyan-300 font-mono uppercase tracking-widest">
+                {editingId ? 'Cập nhật ngân sách' : 'Thêm ngân sách mới'}
+              </h3>
+              <button
+                onClick={() => { setShowModal(false); resetForm(); }}
+                className="text-slate-400 hover:text-slate-200"
+              >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Danh mục</label>
+                <label className="block text-sm font-medium mb-1 text-slate-300">Danh mục</label>
                 <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required className={inputClass}>
                   <option value="">Chọn...</option>
                   {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Chọn ví</label>
-                <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-2">
+                <label className="block text-sm font-medium mb-1 text-slate-300">Chọn ví</label>
+                <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-600 rounded-lg p-2 bg-[#1a1f2b]">
                   {wallets.map((w) => (
                     <label key={w.id} className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -244,30 +262,38 @@ export default function BudgetList() {
                             setWalletIds(walletIds.filter((id) => id !== w.id));
                           }
                         }}
-                        className="rounded"
+                        className="rounded border-gray-500 text-cyan-500 focus:ring-cyan-500"
                       />
-                      <span className="light:text-gray-800 dark:text-white text-sm">{w.name}</span>
+                      <span className="text-slate-200 text-sm">{w.name}</span>
                     </label>
                   ))}
                   {wallets.length === 0 && (
-                    <p className="text-gray-400 text-xs">Chưa có ví nào</p>
+                    <p className="text-slate-500 text-xs">Chưa có ví nào</p>
                   )}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Hạn mức (VNĐ)</label>
+                <label className="block text-sm font-medium mb-1 text-slate-300">Hạn mức (VNĐ)</label>
                 <CurrencyInput value={limitAmount} onChange={setLimitAmount} required min={1} className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 dark:text-gray-300">Ngày hẹn trả (tuỳ chọn)</label>
+                <label className="block text-sm font-medium mb-1 text-slate-300">Ngày hẹn trả (tuỳ chọn)</label>
                 <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputClass} />
               </div>
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              {error && <p className="text-red-400 text-sm font-mono">{error}</p>}
               <div className="flex gap-3 pt-3">
-                <button type="submit" disabled={loading} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition disabled:opacity-50">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-[#0b0e14] font-medium py-2.5 rounded-lg transition disabled:opacity-50 font-mono tracking-wide"
+                >
                   {loading ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Lưu'}
                 </button>
-                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="px-4 py-2.5 border rounded-lg dark:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                <button
+                  type="button"
+                  onClick={() => { setShowModal(false); resetForm(); }}
+                  className="px-4 py-2.5 border border-cyan-500/30 rounded-lg text-slate-300 font-mono hover:bg-cyan-950/30 transition"
+                >
                   Hủy
                 </button>
               </div>
@@ -279,14 +305,17 @@ export default function BudgetList() {
       {/* POP-UP MODAL CẢNH BÁO */}
       {showWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-gray-100 dark:bg-gray-900 rounded-3xl p-6 max-w-xs w-full shadow-2xl text-center flex flex-col items-center">
-            <div className="w-20 h-20 mb-5 bg-amber-100/80 rounded-2xl flex items-center justify-center">
-              <AlertTriangle className="w-12 h-12 text-amber-500 stroke-[2.5]" />
+          <div className="bg-[#0d121c] border border-cyan-500/30 rounded-3xl p-6 max-w-xs w-full shadow-2xl text-center flex flex-col items-center">
+            <div className="w-20 h-20 mb-5 bg-amber-500/10 rounded-2xl flex items-center justify-center">
+              <AlertTriangle className="w-12 h-12 text-amber-400 stroke-[2.5]" />
             </div>
-            <p className="text-gray-900 dark:text-white font-bold text-base mb-6 leading-snug">
+            <p className="text-slate-200 font-bold text-base mb-6 leading-snug font-mono">
               Không thể hoàn tất thao tác. Bạn cần tạo ít nhất 1 ví trước!
             </p>
-            <button onClick={() => setShowWarning(false)} className="w-full text-red-600 font-semibold py-3 rounded-xl border border-red-200 hover:bg-gray-50 transition">
+            <button
+              onClick={() => setShowWarning(false)}
+              className="w-full text-red-400 font-semibold py-3 rounded-xl border border-red-500/30 hover:bg-red-500/10 transition font-mono"
+            >
               Đóng
             </button>
           </div>
