@@ -6,8 +6,8 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/transactions', label: 'Giao dịch', icon: List },
   { to: '/wallets', label: 'Ví', icon: Wallet },
-  { to: '/categories', label: 'Danh mục', icon: PiggyBank },
-  { to: '/budgets', label: 'Ngân sách', icon: Target },
+  { to: '/categories', label: 'Danh mục', icon: Target },
+  { to: '/budgets', label: 'Ngân sách', icon: PiggyBank },
 ];
 
 export default function Navbar() {
@@ -16,17 +16,13 @@ export default function Navbar() {
   return (
     <header className="flex-shrink-0 h-16 border-b border-[#1a2333] bg-[#0d121c] flex items-center font-sans select-none">
       {/* Brand Header */}
-      <div className="flex items-center gap-6 px-6">
+      <div className="px-6">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.15)]">
           <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_#22d3ee]"></div>
           <span className="font-mono text-xs font-bold tracking-wider text-cyan-400 uppercase">
             FIN-SYSTEM
           </span>
         </div>
-        <h1 className="text-base font-bold text-slate-100 tracking-wide">Financial Control</h1>
-        <p className="text-[11px] font-mono text-slate-500 tracking-tight">
-          QUẢN LÝ CHI TIÊU
-        </p>
       </div>
 
       {/* Navigation Items */}
@@ -78,10 +74,6 @@ export default function Navbar() {
         >
           {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
         </button>
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 min-w-[120px]">
-          <span>PORTAL</span>
-          <span className="text-cyan-400">READY</span>
-        </div>
       </div>
     </header>
   );

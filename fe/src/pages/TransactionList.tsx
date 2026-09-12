@@ -60,6 +60,14 @@ export default function TransactionList() {
     return groups;
   }, [] as { date: string; items: typeof filtered }[]);
 
+  const expenseByDate = grouped.reduce((map, group) => {
+    const total = group.items
+      .filter((tx) => tx.type === 'EXPENSE')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    map[group.date] = total;
+    return map;
+  }, {} as Record<string, number>);
+
   const clearFilter = () => {
     setFromDate('');
     setToDate('');
@@ -176,7 +184,7 @@ export default function TransactionList() {
                 <th className="py-3 px-5">Danh mục</th>
                 <th className="py-3 px-5">Ví</th>
                 <th className="py-3 px-5">Ghi chú</th>
-                <th className="py-3 px-5 text-right">Ngày</th>
+                <th className="py-3 px-5 text-right">Tổng tiêu trong ngày</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#172033]">
@@ -198,16 +206,17 @@ export default function TransactionList() {
                         <div className="border-b border-cyan-500/10 mt-1"></div>
                       </td>
                     </tr>
-                    {group.items.map((tx) => {
+                    {group.items.map((tx, txIndex) => {
                       const isIncome = tx.type === 'INCOME';
                       const isExpense = tx.type === 'EXPENSE';
+                      const isLastInGroup = txIndex === group.items.length - 1;
                       const typeColor =
                         isIncome
                           ? 'bg-teal-500/10 text-teal-400 border-teal-500/30'
                           : isExpense
                           ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                           : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30';
-                      const amountColor = isIncome ? 'text-teal-400' : isExpense ? 'text-rose-400' : 'text-cyan-300';
+                      const amountColor = isIncome ? 'text-teal-400' : isExpense ? 'text-rose-400' : 'text-cyan-400';
 
                       return (
                         <tr
@@ -233,8 +242,12 @@ export default function TransactionList() {
                           </td>
                           <td className="py-3.5 px-5 text-slate-300 whitespace-nowrap">{getWalletName(tx.walletId)}</td>
                           <td className="py-3.5 px-5 text-slate-300 text-[15px] max-w-xs truncate">{tx.note || '—'}</td>
-                          <td className="py-3.5 px-5 font-mono text-[15px] text-slate-400 text-right whitespace-nowrap">
-                            {new Date(tx.createdAt).toLocaleDateString('vi-VN')}
+                          <td className="py-3.5 px-5 font-mono text-[15px] text-rose-400 text-right whitespace-nowrap">
+                            {isLastInGroup
+                              ? expenseByDate[group.date] > 0
+                                ? `${expenseByDate[group.date].toLocaleString('vi-VN')} VNĐ`
+                                : '0 VNĐ'
+                              : '—'}
                           </td>
                         </tr>
                       );

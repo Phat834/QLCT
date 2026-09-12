@@ -52,6 +52,14 @@ export default function Dashboard() {
     return groups;
   }, [] as { date: string; items: typeof recentTransactions }[]);
 
+  const expenseByDate = grouped.reduce((map, group) => {
+    const total = group.items
+      .filter((tx) => tx.type === 'EXPENSE')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    map[group.date] = total;
+    return map;
+  }, {} as Record<string, number>);
+
   return (
     <div className="min-h-screen bg-[#0b0e14] text-slate-200 p-6 font-sans">
       {/* Grid thẻ thông số Stats Card */}
@@ -60,7 +68,6 @@ export default function Dashboard() {
           label="Số dư khả dụng"
           value={availableBalance.toLocaleString('vi-VN')}
           unit="VNĐ"
-          subText="Khả dụng chi tiêu"
           icon={Wallet}
           theme="blue"
         />
@@ -68,7 +75,6 @@ export default function Dashboard() {
           label="Số dư tiết kiệm"
           value={savingsBalance.toLocaleString('vi-VN')}
           unit="VNĐ"
-          subText="Tổng tích lũy bảo lưu"
           icon={Layers}
           theme="purple"
         />
@@ -76,7 +82,6 @@ export default function Dashboard() {
           label="Tổng thu nhập"
           value={totalIncome.toLocaleString('vi-VN')}
           unit="VNĐ"
-          subText="Dòng tiền vào tháng"
           icon={TrendingUp}
           theme="teal"
         />
@@ -84,7 +89,6 @@ export default function Dashboard() {
           label="Tổng chi tiêu"
           value={totalExpense.toLocaleString('vi-VN')}
           unit="VNĐ"
-          subText="Chi phí phát sinh"
           icon={TrendingDown}
           theme="rose"
         />
@@ -108,7 +112,7 @@ export default function Dashboard() {
                 <th className="py-3 px-5">Ví nguồn</th>
                 <th className="py-3 px-5">Danh mục</th>
                 <th className="py-3 px-5">Ghi chú</th>
-                <th className="py-3 px-5 text-right">Thời gian</th>
+                <th className="py-3 px-5 text-right">Tổng tiêu trong ngày</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#172033]">
@@ -130,9 +134,10 @@ export default function Dashboard() {
                         <div className="border-b border-cyan-500/10 mt-1"></div>
                       </td>
                     </tr>
-                    {group.items.map((tx) => {
+                    {group.items.map((tx, txIndex) => {
                       const isIncome = tx.type === 'INCOME';
                       const isExpense = tx.type === 'EXPENSE';
+                      const isLastInGroup = txIndex === group.items.length - 1;
 
                       return (
                         <tr key={tx.id} className="hover:bg-cyan-500/[0.04] transition-colors group">
@@ -150,7 +155,7 @@ export default function Dashboard() {
                             </span>
                           </td>
                           <td className="py-3.5 px-5 font-mono font-semibold whitespace-nowrap">
-                            <span className={isIncome ? 'text-teal-400' : isExpense ? 'text-rose-400' : 'text-cyan-300'}>
+                            <span className={isIncome ? 'text-teal-400' : isExpense ? 'text-rose-400' : 'text-cyan-400'}>
                               {isIncome ? '+' : '-'}
                               {tx.amount.toLocaleString('vi-VN')} <span className="text-[11px] text-slate-400">VNĐ</span>
                             </span>
@@ -164,8 +169,12 @@ export default function Dashboard() {
                               : getCategoryName(tx.categoryId)}
                           </td>
                           <td className="py-3.5 px-5 text-slate-300 text-[15px] max-w-xs truncate">{tx.note || '—'}</td>
-                          <td className="py-3.5 px-5 font-mono text-[15px] text-slate-400 text-right whitespace-nowrap">
-                            {new Date(tx.createdAt).toLocaleDateString('vi-VN')}
+                          <td className="py-3.5 px-5 font-mono text-[15px] text-rose-400 text-right whitespace-nowrap">
+                            {isLastInGroup
+                              ? expenseByDate[group.date] > 0
+                                ? `${expenseByDate[group.date].toLocaleString('vi-VN')} VNĐ`
+                                : '0 VNĐ'
+                              : '—'}
                           </td>
                         </tr>
                       );
@@ -192,7 +201,7 @@ function StatCard({
   label: string;
   value: string;
   unit: string;
-  subText: string;
+  subText?: string;
   icon: any;
   theme: 'blue' | 'purple' | 'teal' | 'rose';
 }) {
@@ -236,7 +245,7 @@ function StatCard({
             <Icon size={16} />
           </div>
         </div>
-        <p className="text-[11px] text-slate-400 mb-4">{subText}</p>
+        {subText && <p className="text-[11px] text-slate-400 mb-4">{subText}</p>}
       </div>
 
       <div className="pt-2 border-t border-white/5 flex items-baseline gap-1">
