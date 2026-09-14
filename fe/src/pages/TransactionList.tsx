@@ -49,8 +49,21 @@ export default function TransactionList() {
     return true;
   });
 
+  // Format chuẩn: 14/09/2026 - Thứ 2
+  const formatDateWithDay = (dateStr: string): string => {
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const weekdays = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    const weekday = weekdays[d.getDay()];
+    return `${day}/${month}/${year} - ${weekday}`;
+  };
+
   const grouped = filtered.reduce((groups, tx) => {
-    const dateKey = tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('vi-VN') : 'Không rõ ngày';
+    const dateKey = tx.createdAt
+      ? formatDateWithDay(tx.createdAt)
+      : 'Không rõ ngày';
     const last = groups[groups.length - 1];
     if (last && last.date === dateKey) {
       last.items.push(tx);
@@ -115,21 +128,23 @@ export default function TransactionList() {
   if (loading) return <div className="text-center py-20 text-cyan-400 font-mono tracking-wider animate-pulse">Đang tải dữ liệu...</div>;
   if (error) return <div className="text-red-400 py-20 font-mono text-center">Lỗi: {error}</div>;
 
-  const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#1a1f2b] border-gray-600 text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50';
+  const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#0d131f] border-gray-700 text-white font-sans focus:outline-none focus:border-cyan-500/50';
 
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-slate-200 font-sans">
+    <div className="min-h-screen bg-[var(--bg-page)] text-white font-sans">
+      {/* Tiêu đề trang: đã đổi sang text-white font-bold */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-200 font-mono tracking-wide">Giao dịch</h2>
+        <h2 className="text-2xl font-bold text-white font-mono tracking-wide">Giao dịch</h2>
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
-          className="bg-cyan-500 hover:bg-cyan-400 text-[#0b0e14] font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
+          className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition shadow-lg shadow-cyan-500/20"
         >
           <Plus size={16} /> Thêm
         </button>
       </div>
 
-      <div className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 overflow-hidden backdrop-blur-md mb-6">
+      {/* BỘ LỌC */}
+      <div className="border border-cyan-500/30 bg-[var(--bg-card-overlay)] rounded-2xl shadow-xl shadow-cyan-950/20 overflow-hidden backdrop-blur-md mb-6">
         <div className="flex items-center px-6 py-4 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-950/30 via-transparent to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]"></div>
@@ -140,15 +155,15 @@ export default function TransactionList() {
         <div className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-300">Từ ngày</label>
+              <label className="block text-sm font-medium mb-1 text-slate-200">Từ ngày</label>
               <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-300">Đến ngày</label>
+              <label className="block text-sm font-medium mb-1 text-slate-200">Đến ngày</label>
               <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-300">Loại</label>
+              <label className="block text-sm font-medium mb-1 text-slate-200">Loại</label>
               <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={inputClass}>
                 <option value="">Tất cả</option>
                 <option value="EXPENSE">Chi tiêu</option>
@@ -157,7 +172,7 @@ export default function TransactionList() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-300">Danh mục</label>
+              <label className="block text-sm font-medium mb-1 text-slate-200">Danh mục</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={inputClass}>
                 <option value="">Tất cả</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -167,18 +182,29 @@ export default function TransactionList() {
               <button
                 type="button"
                 onClick={clearFilter}
-                className="w-full border border-cyan-500/30 px-4 py-2 rounded-lg text-slate-300 font-mono hover:bg-cyan-950/30 transition"
-              >Xoá lọc</button>
+                className="w-full border border-cyan-500/40 px-4 py-2 rounded-lg text-slate-200 font-mono hover:bg-cyan-500/10 hover:text-white transition"
+              >
+                Xoá lọc
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 overflow-hidden backdrop-blur-md">
+      {/* BẢNG GIAO DỊCH GẦN ĐÂY */}
+      <div className="border border-cyan-500/30 bg-[var(--bg-card-overlay)] rounded-2xl shadow-xl shadow-cyan-950/20 overflow-hidden backdrop-blur-md">
+        <div className="flex items-center px-6 py-4 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-950/30 via-transparent to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]"></div>
+            <h3 className="font-mono uppercase tracking-widest text-sm font-semibold text-cyan-300">Giao dịch gần đây</h3>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm font-sans border-collapse">
+          <table className="w-full text-left text-[15px] font-sans border-collapse">
             <thead>
-              <tr className="border-b border-[#1e293b] text-slate-400 font-mono text-xs uppercase bg-[#111827]/60">
+              {/* Header bảng: đổi sang text-slate-400 sáng rõ */}
+              <tr className="border-b border-cyan-500/20 text-slate-300 font-mono text-xs uppercase bg-black/20">
                 <th className="py-3 px-5">Loại</th>
                 <th className="py-3 px-5">Số tiền</th>
                 <th className="py-3 px-5">Danh mục</th>
@@ -187,10 +213,10 @@ export default function TransactionList() {
                 <th className="py-3 px-5 text-right">Tổng tiêu trong ngày</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#172033]">
+            <tbody className="divide-y divide-white/5">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-slate-400 font-mono">
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-400 font-mono text-[15px]">
                     Chưa có giao dịch nào
                   </td>
                 </tr>
@@ -199,8 +225,9 @@ export default function TransactionList() {
                   <Fragment key={group.date}>
                     <tr>
                       <td colSpan={6} className="px-5 py-1">
-                        <div className="border-t-2 border-cyan-500/30 my-1"></div>
-                        <span className="font-mono text-[15px] font-semibold text-cyan-300 uppercase tracking-wider">
+                        <div className="border-t border-cyan-500/30 my-1"></div>
+                        {/* Format ngày tháng giữ nguyên dạng Thứ X, không bị uppercase */}
+                        <span className="font-mono text-[15px] font-semibold text-cyan-300 tracking-wider">
                           {group.date}
                         </span>
                         <div className="border-b border-cyan-500/10 mt-1"></div>
@@ -225,24 +252,27 @@ export default function TransactionList() {
                         >
                           <td className="py-3.5 px-5 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-medium border ${typeColor}`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[13px] font-mono font-medium border ${typeColor}`}
                             >
                               {isIncome ? 'Thu nhập' : isExpense ? 'Chi tiêu' : 'Chuyển tiền'}
                             </span>
                           </td>
-                          <td className={`py-3.5 px-5 font-mono font-semibold whitespace-nowrap ${amountColor}`}>
-                            {isIncome ? '+' : '-'}{tx.amount.toLocaleString('vi-VN')} <span className="text-[11px] text-slate-400">VNĐ</span>
+                          <td className={`py-3.5 px-5 font-mono text-base font-semibold whitespace-nowrap ${amountColor}`}>
+                            {isIncome ? '+' : '-'}{tx.amount.toLocaleString('vi-VN')} <span className="text-xs opacity-70">VNĐ</span>
                           </td>
-                          <td className="py-3.5 px-5 text-slate-300 whitespace-nowrap">
+                          {/* Đã đổi sang text-white rõ nét */}
+                          <td className="py-3.5 px-5 text-white text-[15px] whitespace-nowrap font-normal">
                             {tx.type === 'INCOME'
                               ? 'Tiền vào'
                               : tx.type === 'TRANSFER'
-                                ? 'Chuyển ví nội bộ'
-                                : getCategoryName(tx.categoryId)}
+                              ? 'Chuyển ví nội bộ'
+                              : getCategoryName(tx.categoryId)}
                           </td>
-                          <td className="py-3.5 px-5 text-slate-300 whitespace-nowrap">{getWalletName(tx.walletId)}</td>
-                          <td className="py-3.5 px-5 text-slate-300 text-[15px] max-w-xs truncate">{tx.note || '—'}</td>
-                          <td className="py-3.5 px-5 font-mono text-[15px] text-rose-400 text-right whitespace-nowrap">
+                          {/* Đã đổi sang text-white rõ nét */}
+                          <td className="py-3.5 px-5 text-white text-[15px] whitespace-nowrap font-normal">{getWalletName(tx.walletId)}</td>
+                          {/* Đã đổi sang text-slate-200 rõ nét */}
+                          <td className="py-3.5 px-5 text-slate-200 text-[15px] max-w-xs truncate">{tx.note || '—'}</td>
+                          <td className="py-3.5 px-5 font-mono text-[15px] text-rose-400 text-right whitespace-nowrap font-medium">
                             {isLastInGroup
                               ? expenseByDate[group.date] > 0
                                 ? `${expenseByDate[group.date].toLocaleString('vi-VN')} VNĐ`
@@ -260,14 +290,15 @@ export default function TransactionList() {
         </div>
       </div>
 
+      {/* POPUP MODAL */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#0d121c] border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-cyan-950/30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#0b101b] border border-cyan-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-cyan-950/40">
             <div className="flex justify-between items-center mb-5 border-b border-cyan-500/20 pb-3">
               <h3 className="text-xl font-bold text-cyan-300 font-mono uppercase tracking-widest">Thêm giao dịch mới</h3>
               <button
                 onClick={() => { setShowModal(false); resetForm(); }}
-                className="text-slate-400 hover:text-slate-200"
+                className="text-slate-400 hover:text-white"
               >
                 <X size={20} />
               </button>
@@ -275,7 +306,7 @@ export default function TransactionList() {
 
             <form onSubmit={handleCreateTransaction} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Loại giao dịch</label>
+                <label className="block text-sm font-medium mb-1 text-slate-200">Loại giao dịch</label>
                 <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
                   <option value="EXPENSE">Chi tiêu</option>
                   <option value="INCOME">Thu nhập</option>
@@ -284,21 +315,21 @@ export default function TransactionList() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Số tiền (VNĐ)</label>
+                <label className="block text-sm font-medium mb-1 text-slate-200">Số tiền (VNĐ)</label>
                 <CurrencyInput value={amount} onChange={setAmount} required min={1} className={inputClass} />
               </div>
 
               {type === 'TRANSFER' ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-slate-300">Ví nguồn</label>
+                    <label className="block text-sm font-medium mb-1 text-slate-200">Ví nguồn</label>
                     <select value={fromWalletId} onChange={(e) => setFromWalletId(e.target.value)} required className={inputClass}>
                       <option value="">Chọn ví...</option>
                       {wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-slate-300">Ví đích</label>
+                    <label className="block text-sm font-medium mb-1 text-slate-200">Ví đích</label>
                     <select value={toWalletId} onChange={(e) => setToWalletId(e.target.value)} required className={inputClass}>
                       <option value="">Chọn ví...</option>
                       {wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -308,7 +339,7 @@ export default function TransactionList() {
               ) : (
                 <>
                   <div>
-                    <label className="block text-sm font-medium mb-1 text-slate-300">Ví</label>
+                    <label className="block text-sm font-medium mb-1 text-slate-200">Ví</label>
                     <select value={walletId} onChange={(e) => setWalletId(e.target.value)} required className={inputClass}>
                       <option value="">Chọn ví...</option>
                       {wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -316,7 +347,7 @@ export default function TransactionList() {
                   </div>
                   {type === 'EXPENSE' && (
                     <div>
-                      <label className="block text-sm font-medium mb-1 text-slate-300">Danh mục</label>
+                      <label className="block text-sm font-medium mb-1 text-slate-200">Danh mục</label>
                       <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required className={inputClass}>
                         <option value="">Chọn danh mục...</option>
                         {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -327,7 +358,7 @@ export default function TransactionList() {
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Ghi chú</label>
+                <label className="block text-sm font-medium mb-1 text-slate-200">Ghi chú</label>
                 <input
                   type="text"
                   value={note}
@@ -342,14 +373,14 @@ export default function TransactionList() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-[#0b0e14] font-medium py-2.5 rounded-lg transition disabled:opacity-50 font-mono tracking-wide"
+                  className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-2.5 rounded-lg transition disabled:opacity-50 font-mono tracking-wide shadow-lg shadow-cyan-500/20"
                 >
                   {submitting ? 'Đang lưu...' : 'Tạo giao dịch'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); resetForm(); }}
-                  className="px-4 py-2.5 border border-cyan-500/30 rounded-lg text-slate-300 font-mono hover:bg-cyan-950/30 transition"
+                  className="px-4 py-2.5 border border-cyan-500/40 rounded-lg text-slate-300 font-mono hover:bg-white/5 transition"
                 >
                   Hủy
                 </button>
