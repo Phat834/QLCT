@@ -1,6 +1,6 @@
 import type { Budget, Category, Transaction, Wallet } from '../contexts/AppContext';
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://daxton-jasmined-unstubbornly.ngrok-free.dev/api';
 
 type WalletInput = Omit<Wallet, 'createdAt'>;
 type WalletUpdateInput = Omit<WalletInput, 'id'>;
