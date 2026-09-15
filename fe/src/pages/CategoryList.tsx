@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { api } from '../services/api';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 
 export default function CategoryList() {
@@ -22,26 +23,10 @@ export default function CategoryList() {
     setLoading(true);
     try {
       if (editingId) {
-        const res = await fetch(`http://localhost:3000/api/categories/${editingId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name }),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
-          throw new Error(err.error || res.statusText);
-        }
+        await api.updateCategory(editingId, { name });
       } else {
         const id = 'cat_' + Math.random().toString(36).slice(2, 8);
-        const res = await fetch('http://localhost:3000/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, name }),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
-          throw new Error(err.error || res.statusText);
-        }
+        await api.createCategory({ id, name });
       }
       resetForm();
       setShowModal(false);
@@ -57,13 +42,7 @@ export default function CategoryList() {
     if (!confirm('Bạn có chắc muốn xoá danh mục này?')) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/categories/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
-        throw new Error(err.error || res.statusText);
-      }
+      await api.deleteCategory(id);
       await refetch();
     } catch (err: any) {
       setError(err.message);
