@@ -3,7 +3,7 @@ import { useApp } from '../contexts/AppContext';
 import { TrendingUp, TrendingDown, Wallet, Layers, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function Dashboard() {
-  const { wallets, transactions, categories, budgets, loading, error } = useApp();
+  const { wallets, transactions, categories, loading, error } = useApp();
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -52,19 +52,11 @@ export default function Dashboard() {
     .filter((t) => t.type === 'EXPENSE')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const savingsWalletIds = new Set<string>();
-  budgets.forEach((b) => {
-    const catName = categories.find((c) => c.id === b.categoryId)?.name || '';
-    if (catName.toLowerCase().includes('tiết kiệm')) {
-      b.walletIds.forEach((wid) => savingsWalletIds.add(wid));
-    }
-  });
-
   const savingsBalance = wallets
-    .filter((w) => savingsWalletIds.has(w.id))
+    .filter((w) => w.type === 'SAVINGS')
     .reduce((sum, w) => sum + w.balance, 0);
   const availableBalance = wallets
-    .filter((w) => !savingsWalletIds.has(w.id))
+    .filter((w) => w.type !== 'SAVINGS')
     .reduce((sum, w) => sum + w.balance, 0);
 
   return (
