@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
+import { api } from '../services/api';
 import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency, formatCurrency } from '../utils/currency';
-import { Plus, Pencil, Trash2, X, Wallet, AlertTriangle, Calendar, Check, RotateCcw } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Wallet, AlertTriangle, Calendar } from 'lucide-react';
 
 export default function BudgetList() {
   const { budgets, categories, transactions, wallets, refetch } = useApp();
@@ -99,6 +100,7 @@ export default function BudgetList() {
     if (!confirm('Bạn có chắc muốn xoá?')) return;
     try {
       await api.deleteBudget(id);
+      await api.deleteBudget(id);
       await refetch();
     } catch (err: any) { setError(err.message); }
   };
@@ -168,36 +170,31 @@ export default function BudgetList() {
                       <Calendar size={12} /> Hẹn trả: {formatDueDate(b.dueDate)}
                     </span>
                   )}
-                  {b.dueDate && pct >= 100 && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                      <Check size={12} /> Đã trả
-                    </span>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
                   {pct >= 100 && (
                     <button
                       onClick={() => resetBudget(b.id, spent)}
-                      className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-[#0b0e14] font-medium rounded-lg flex items-center gap-1.5 font-mono tracking-wide transition shadow-lg shadow-amber-500/20"
+                      className="px-2 py-1 text-xs text-white bg-amber-500 hover:bg-amber-400 rounded font-mono transition"
                       title="Reset về 0"
                     >
-                      <RotateCcw size={16} /> Reset
+                      Reset
                     </button>
                   )}
                   <button
                     onClick={() => startEdit(b)}
-                    className="px-4 py-2 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg flex items-center gap-1.5 font-mono transition"
+                    className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
                     title="Sửa"
                   >
-                    <Pencil size={16} /> Sửa
+                    <Pencil size={15} />
                   </button>
                   <button
                     onClick={() => handleDelete(b.id)}
-                    className="px-4 py-2 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg flex items-center gap-1.5 font-mono transition"
+                    className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
                     title="Xoá"
                   >
-                    <Trash2 size={16} /> Xoá
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>

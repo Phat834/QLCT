@@ -1,6 +1,6 @@
 ﻿import { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { TrendingUp, TrendingDown, Wallet, Layers, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Layers, Calendar } from 'lucide-react';
 
 export default function Dashboard() {
   const { wallets, transactions, categories, loading, error } = useApp();
@@ -8,7 +8,15 @@ export default function Dashboard() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  const getCategoryName = (categoryId?: string) => {
+    if (!categoryId) return 'Chưa phân loại';
+    return categories.find((c) => c.id === categoryId)?.name || categoryId;
+  };
+
+  const getWalletName = (walletId: string) => {
+    return wallets.find((w) => w.id === walletId)?.name || walletId;
+  };
 
   const monthExpenses = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
@@ -22,25 +30,21 @@ export default function Dashboard() {
   const totalMonthExpense = monthExpenses.reduce((sum, tx) => sum + tx.amount, 0);
 
   const expensesByCategory = useMemo(() => {
-    const map = new Map<string, { total: number; txs: typeof transactions }>();
+    const map = new Map<string, number>();
     monthExpenses.forEach((tx) => {
       const catName = !tx.categoryId
         ? 'Chưa phân loại'
         : (categories.find((c) => c.id === tx.categoryId)?.name || tx.categoryId);
-      const existing = map.get(catName);
-      if (existing) {
-        existing.total += tx.amount;
-        existing.txs.push(tx);
-      } else {
-        map.set(catName, { total: tx.amount, txs: [tx] });
-      }
+      map.set(catName, (map.get(catName) || 0) + tx.amount);
     });
     return Array.from(map.entries())
-      .map(([name, data]) => ({ name, total: data.total, txs: data.txs }))
+      .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total);
   }, [monthExpenses, categories]);
 
   const topExpense = expensesByCategory.length > 0 ? expensesByCategory[0] : null;
+
+  const expenseList = [...monthExpenses].sort((a, b) => b.amount - a.amount);
 
   if (loading) return <div className="text-center py-20 text-cyan-400 font-mono tracking-wider animate-pulse">Đang tải dữ liệu...</div>;
   if (error) return <div className="text-red-400 py-20 font-mono text-center">Lỗi: {error}</div>;
@@ -137,33 +141,15 @@ export default function Dashboard() {
                 {expensesByCategory.map((cat, idx) => {
                   const pct = totalMonthExpense > 0 ? (cat.total / totalMonthExpense) * 100 : 0;
                   const isHighest = idx === 0;
-                  const isExpanded = expandedCategory === cat.name;
                   return (
                     <div key={cat.name} className="space-y-1">
-                      <div
-                        className="flex items-center justify-between cursor-pointer hover:bg-cyan-500/[0.04] rounded-lg p-2 transition-colors"
-                        onClick={() => setExpandedCategory(isExpanded ? null : cat.name)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className={`text-lg font-mono ${isHighest ? 'text-rose-400' : 'text-white'}`}>
-                            {cat.name}
-                          </span>
-                          {isHighest && (
-                            <span className="text-[11px] text-rose-400 font-mono bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded">
-                              Cao nhất
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-lg font-mono font-semibold ${isHighest ? 'text-rose-400' : 'text-slate-200'}`}>
-                            {cat.total.toLocaleString('vi-VN')} VNĐ ({pct.toFixed(1)}%)
-                          </span>
-                          {isExpanded ? (
-                            <ChevronUp size={16} className="text-cyan-400" />
-                          ) : (
-                            <ChevronDown size={16} className="text-slate-400" />
-                          )}
-                        </div>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-lg font-mono ${isHighest ? 'text-rose-400' : 'text-white'}`}>
+                          {cat.name}
+                        </span>
+                        <span className={`text-lg font-mono font-semibold ${isHighest ? 'text-rose-400' : 'text-slate-200'}`}>
+                          {cat.total.toLocaleString('vi-VN')} VNĐ ({pct.toFixed(1)}%)
+                        </span>
                       </div>
                       <div className="w-full bg-[#0d131f] rounded-full h-3 overflow-hidden border border-white/5">
                         <div
@@ -171,35 +157,38 @@ export default function Dashboard() {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-
-                      {isExpanded && (
-                        <div className="mt-2 space-y-2 border-l-2 border-cyan-500/20 pl-4 pt-2">
-                          {cat.txs
-                            .slice()
-                            .sort((a, b) => b.amount - a.amount)
-                            .map((tx) => (
-                              <div
-                                key={tx.id}
-                                className="flex items-center justify-between py-2 text-[15px]"
-                              >
-                                <span className="text-slate-300">
-                                  {tx.createdAt
-                                    ? new Date(tx.createdAt).toLocaleDateString('vi-VN')
-                                    : '—'}
-                                </span>
-                                <span className="text-slate-200 max-w-xs truncate">
-                                  {tx.note || '—'}
-                                </span>
-                                <span className="text-rose-400 font-mono font-semibold">
-                                  {tx.amount.toLocaleString('vi-VN')} VNĐ
-                                </span>
-                              </div>
-                            ))}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Top expense transactions */}
+              <div className="border-t border-cyan-500/20 pt-4">
+                <h4 className="font-mono uppercase tracking-widest text-sm font-semibold text-cyan-300 mb-3">
+                  Các khoản chi tiêu lớn
+                </h4>
+                <div className="space-y-2">
+                  {expenseList.slice(0, 5).map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between py-2.5 border-b border-cyan-500/10 last:border-0 hover:bg-cyan-500/[0.04] px-3 rounded-lg transition-colors"
+                    >
+                      <div className="flex-1 flex items-center">
+                        <span className="text-lg font-mono text-rose-400 font-semibold whitespace-nowrap">
+                          -{tx.amount.toLocaleString('vi-VN')} VNĐ
+                        </span>
+                        <span className="text-[15px] text-white ml-3">
+                          {getCategoryName(tx.categoryId)}{' '}
+                          <span className="text-cyan-500/60 font-semibold">•</span>{' '}
+                          {getWalletName(tx.walletId)}
+                        </span>
+                      </div>
+                      <span className="text-[15px] text-slate-200 max-w-sm truncate text-right">
+                        {tx.note || '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
