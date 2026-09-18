@@ -1,5 +1,6 @@
 import { useState, Fragment } from 'react';
 import { useApp } from '../contexts/AppContext';
+import type { Transaction } from '../contexts/AppContext';
 import { api } from '../services/api';
 import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency } from '../utils/currency';
@@ -80,6 +81,31 @@ export default function TransactionList() {
     map[group.date] = total;
     return map;
   }, {} as Record<string, number>);
+
+  const availableWalletType = new Map(wallets.map((w) => [w.id, w.type]));
+
+  const availableBalance = wallets
+    .filter((w) => w.type !== 'SAVINGS')
+    .reduce((sum, w) => sum + w.balance, 0);
+
+  const availableDelta = (tx: Transaction) => {
+    const fromSavings = availableWalletType.get(tx.walletId) === 'SAVINGS';
+    const toSavings = tx.targetWalletId ? availableWalletType.get(tx.targetWalletId) === 'SAVINGS' : false;
+    if (tx.type === 'INCOME') return fromSavings ? 0 : tx.amount;
+    if (tx.type === 'EXPENSE') return fromSavings ? 0 : -tx.amount;
+    return (fromSavings ? 0 : -tx.amount) + (toSavings ? 0 : tx.amount);
+  };
+
+  const openingAvailable = availableBalance - transactions.reduce((sum, tx) => sum + availableDelta(tx), 0);
+
+  const dayEndBalances: Record<string, number> = {};
+  let cumulative = openingAvailable;
+  grouped.forEach((group) => {
+    group.items.forEach((tx) => {
+      cumulative += availableDelta(tx);
+    });
+    dayEndBalances[group.date] = cumulative;
+  });
 
   const clearFilter = () => {
     setFromDate('');
@@ -282,6 +308,16 @@ export default function TransactionList() {
                         </tr>
                       );
                     })}
+                    <tr>
+                      <td colSpan={6} className="px-5 py-2 border-t border-cyan-500/10 text-right text-slate-300 text-sm font-mono">
+                        Số dư khả dụng cuối ngày:{' '}
+                        <span className="text-cyan-300">
+                          {dayEndBalances[group.date] !== undefined
+                            ? `${dayEndBalances[group.date].toLocaleString('vi-VN')} VNĐ`
+                            : '-'}
+                        </span>
+                      </td>
+                    </tr>
                   </Fragment>
                 ))
               )}

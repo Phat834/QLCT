@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
+import { api } from '../services/api';
 import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X, Wallet, AlertTriangle, Calendar } from 'lucide-react';
@@ -78,16 +79,15 @@ export default function BudgetList() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const baseBody = { categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null };
+    const body = editingId
+      ? { categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null }
+      : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null };
 
     try {
       if (editingId) {
-        await api.updateBudget(editingId, baseBody);
+        await api.updateBudget(editingId, body);
       } else {
-        await api.createBudget({
-          id: 'budget_' + Math.random().toString(36).slice(2, 10),
-          ...baseBody,
-        });
+        await api.createBudget(body);
       }
       resetForm();
       setShowModal(false);
@@ -99,6 +99,7 @@ export default function BudgetList() {
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xoá?')) return;
     try {
+      await api.deleteBudget(id);
       await api.deleteBudget(id);
       await refetch();
     } catch (err: any) { setError(err.message); }

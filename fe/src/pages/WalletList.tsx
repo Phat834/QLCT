@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
+import { api } from '../services/api';
 import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X, Wallet } from 'lucide-react';
@@ -31,13 +32,10 @@ export default function WalletList() {
     setLoading(true);
     try {
       if (editingId) {
-        await api.updateWallet(editingId, {
-          name,
-          balance: parseCurrency(balance),
-          type,
-        });
+        await api.updateWallet(editingId, { name, balance: parseCurrency(balance), type });
       } else {
         const id = 'w_' + Math.random().toString(36).slice(2, 10);
+        await api.createWallet({ id, name, balance: parseCurrency(balance), type });
         await api.createWallet({ id, name, balance: parseCurrency(balance), type });
       }
       resetForm();
@@ -54,6 +52,7 @@ export default function WalletList() {
     if (!confirm('Bạn có chắc muốn xoá ví này?')) return;
     setLoading(true);
     try {
+      await api.deleteWallet(id);
       await api.deleteWallet(id);
       await refetch();
     } catch (err: any) {
