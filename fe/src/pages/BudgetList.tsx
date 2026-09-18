@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { api } from '../services/api';
 import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X, Wallet, AlertTriangle, Calendar, Check, RotateCcw } from 'lucide-react';
@@ -77,15 +78,16 @@ export default function BudgetList() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const url = editingId ? `http://localhost:3000/api/budgets/${editingId}` : 'http://localhost:3000/api/budgets';
-    const method = editingId ? 'PUT' : 'POST';
     const body = editingId
       ? { categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null }
       : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null };
 
     try {
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+      if (editingId) {
+        await api.updateBudget(editingId, body);
+      } else {
+        await api.createBudget(body);
+      }
       resetForm();
       setShowModal(false);
       await refetch();
@@ -96,7 +98,7 @@ export default function BudgetList() {
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xoá?')) return;
     try {
-      await fetch(`http://localhost:3000/api/budgets/${id}`, { method: 'DELETE' });
+      await api.deleteBudget(id);
       await refetch();
     } catch (err: any) { setError(err.message); }
   };

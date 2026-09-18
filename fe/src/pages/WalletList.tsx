@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { api } from '../services/api';
 import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X, Wallet } from 'lucide-react';
@@ -30,26 +31,10 @@ export default function WalletList() {
     setLoading(true);
     try {
       if (editingId) {
-        const res = await fetch(`http://localhost:3000/api/wallets/${editingId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, balance: parseCurrency(balance), type }),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
-          throw new Error(err.error || res.statusText);
-        }
+        await api.updateWallet(editingId, { name, balance: parseCurrency(balance), type });
       } else {
         const id = 'w_' + Math.random().toString(36).slice(2, 10);
-        const res = await fetch('http://localhost:3000/api/wallets', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, name, balance: parseCurrency(balance), type }),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
-          throw new Error(err.error || res.statusText);
-        }
+        await api.createWallet({ id, name, balance: parseCurrency(balance), type });
       }
       resetForm();
       setShowModal(false);
@@ -65,13 +50,7 @@ export default function WalletList() {
     if (!confirm('Bạn có chắc muốn xoá ví này?')) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/wallets/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Lỗi không xác định' }));
-        throw new Error(err.error || res.statusText);
-      }
+      await api.deleteWallet(id);
       await refetch();
     } catch (err: any) {
       setError(err.message);
