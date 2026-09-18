@@ -13,3 +13,5 @@ export default defineConfig({
     allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app'] // Cho phép toàn bộ domain từ Ngrok
   }
 })
+
+// Comment thử nghiệm: cấu hình Vite của dự án.
