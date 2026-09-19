@@ -23,6 +23,9 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+be/src/**/*.js
+be/src/**/*.d.ts
+be/src/**/*.map
 
 # Logs
 npm-debug.log*
