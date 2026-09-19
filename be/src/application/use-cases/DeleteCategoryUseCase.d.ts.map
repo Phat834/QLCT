@@ -1,1 +1,0 @@
-{"version":3,"file":"DeleteCategoryUseCase.d.ts","sourceRoot":"","sources":["DeleteCategoryUseCase.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,mBAAmB,EAAE,MAAM,kDAAkD,CAAC;AAEvF,qBAAa,qBAAqB;IACpB,OAAO,CAAC,YAAY;IAAhC,YAAoB,YAAY,EAAE,mBAAmB,EAAI;IAEnD,OAAO,CAAC,EAAE,EAAE,MAAM,GAAG,OAAO,CAAC,IAAI,CAAC,CAEvC;CACF"}

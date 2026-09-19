@@ -34,17 +34,26 @@ export default function TransactionList() {
     return wallets.find((w) => w.id === wId)?.name || wId;
   };
 
+  // Build start of day (00:00:00.000) and end of day (23:59:59.999) in LOCAL timezone
+  const startOfDay = (dateStr: string) => {
+    const d = new Date(dateStr);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+  const endOfDay = (dateStr: string) => {
+    const d = new Date(dateStr);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  };
+
+  const from = fromDate ? startOfDay(fromDate) : null;
+  const to = toDate ? endOfDay(toDate) : null;
+
   const filtered = transactions.filter((tx) => {
     if (!tx.createdAt) return true;
     const d = new Date(tx.createdAt);
-    const from = fromDate ? new Date(fromDate) : null;
-    const to = toDate ? new Date(toDate) : null;
     if (from && d < from) return false;
-    if (to) {
-      const end = new Date(to);
-      end.setHours(23, 59, 59, 999);
-      if (d > end) return false;
-    }
+    if (to && d > to) return false;
     if (typeFilter && tx.type !== typeFilter) return false;
     if (categoryFilter && tx.categoryId !== categoryFilter) return false;
     return true;
@@ -96,12 +105,34 @@ export default function TransactionList() {
     return (fromSavings ? 0 : -tx.amount) + (toSavings ? 0 : tx.amount);
   };
 
+  // Opening balance = current available balance - all transactions' effect (from beginning of time)
   const openingAvailable = availableBalance - transactions.reduce((sum, tx) => sum + availableDelta(tx), 0);
 
+  // Compute running balance correctly:
+  // 1. Sort ALL transactions chronologically
+  // 2. Find balance at start of fromDate (or beginning of time if no fromDate)
+  // 3. Then walk through filtered transactions in order, updating balance per day
+  const allTxSorted = [...transactions].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+
+  // Balance at the start of the filter window (before fromDate, or beginning of time)
+  let balanceAtWindowStart = openingAvailable;
+  if (from) {
+    for (const tx of allTxSorted) {
+      if (!tx.createdAt) continue;
+      const d = new Date(tx.createdAt);
+      if (d >= from) break;
+      balanceAtWindowStart += availableDelta(tx);
+    }
+  }
+
   const dayEndBalances: Record<string, number> = {};
-  let cumulative = openingAvailable;
+  let cumulative = balanceAtWindowStart;
+
+  // Process filtered transactions in chronological order (grouped is already chronological)
   grouped.forEach((group) => {
-    group.items.forEach((tx) => {
+    // Sort items within group by date to ensure correct intra-day order
+    const sortedItems = [...group.items].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+    sortedItems.forEach((tx) => {
       cumulative += availableDelta(tx);
     });
     dayEndBalances[group.date] = cumulative;

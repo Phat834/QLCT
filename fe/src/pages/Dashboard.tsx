@@ -1,6 +1,6 @@
 ﻿import { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { TrendingUp, TrendingDown, Wallet, Layers, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Layers, Calendar, ChevronDown } from 'lucide-react';
 
 export default function Dashboard() {
   const { wallets, transactions, categories, loading, error } = useApp();
@@ -8,11 +8,6 @@ export default function Dashboard() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-
-  const getCategoryName = (categoryId?: string) => {
-    if (!categoryId) return 'Chưa phân loại';
-    return categories.find((c) => c.id === categoryId)?.name || categoryId;
-  };
 
   const getWalletName = (walletId: string) => {
     return wallets.find((w) => w.id === walletId)?.name || walletId;
@@ -44,7 +39,21 @@ export default function Dashboard() {
 
   const topExpense = expensesByCategory.length > 0 ? expensesByCategory[0] : null;
 
-  const expenseList = [...monthExpenses].sort((a, b) => b.amount - a.amount);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  const expensesByCategoryDetail = useMemo(() => {
+    const map = new Map<string, typeof monthExpenses>();
+    monthExpenses.forEach((tx) => {
+      const catName = !tx.categoryId
+        ? 'Chưa phân loại'
+        : (categories.find((c) => c.id === tx.categoryId)?.name || tx.categoryId);
+      if (!map.has(catName)) map.set(catName, []);
+      map.get(catName)!.push(tx);
+    });
+    // Sort transactions within each category by date (newest first)
+    map.forEach((txs) => txs.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()));
+    return map;
+  }, [monthExpenses, categories]);
 
   if (loading) return <div className="text-center py-20 text-cyan-400 font-mono tracking-wider animate-pulse">Đang tải dữ liệu...</div>;
   if (error) return <div className="text-red-400 py-20 font-mono text-center">Lỗi: {error}</div>;
@@ -135,62 +144,81 @@ export default function Dashboard() {
           {expensesByCategory.length === 0 ? (
             <p className="text-slate-400 font-mono text-center py-8">Chưa có chi tiêu nào trong tháng này</p>
           ) : (
-            <>
-              {/* Category breakdown */}
-              <div className="space-y-3 mb-6">
-                {expensesByCategory.map((cat, idx) => {
-                  const pct = totalMonthExpense > 0 ? (cat.total / totalMonthExpense) * 100 : 0;
-                  const isHighest = idx === 0;
-                  return (
-                    <div key={cat.name} className="space-y-1">
-                      <div className="flex items-center justify-between">
+            <div className="space-y-3">
+              {expensesByCategory.map((cat, idx) => {
+                const pct = totalMonthExpense > 0 ? (cat.total / totalMonthExpense) * 100 : 0;
+                const isHighest = idx === 0;
+                const isExpanded = expandedCategory === cat.name;
+                const detailTxs = expensesByCategoryDetail.get(cat.name) || [];
+
+                return (
+                  <div key={cat.name} className="space-y-1">
+                    <button
+                      onClick={() => setExpandedCategory(isExpanded ? null : cat.name)}
+                      className="w-full flex items-center justify-between py-2 px-3 rounded-lg hover:bg-cyan-500/[0.04] transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3">
                         <span className={`text-lg font-mono ${isHighest ? 'text-rose-400' : 'text-white'}`}>
                           {cat.name}
                         </span>
+                        {isHighest && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-mono bg-rose-500/20 text-rose-400 rounded border border-rose-500/30">
+                            cao nhất
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4">
                         <span className={`text-lg font-mono font-semibold ${isHighest ? 'text-rose-400' : 'text-slate-200'}`}>
                           {cat.total.toLocaleString('vi-VN')} VNĐ ({pct.toFixed(1)}%)
                         </span>
+                        <span className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                          <ChevronDown size={18} />
+                        </span>
                       </div>
-                      <div className="w-full bg-[#0d131f] rounded-full h-3 overflow-hidden border border-white/5">
-                        <div
-                          className={`h-full rounded-full transition-all ${isHighest ? 'bg-rose-400 shadow-[0_0_8px_#f43f5e]' : 'bg-cyan-500'}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    </button>
 
-              {/* Top expense transactions */}
-              <div className="border-t border-cyan-500/20 pt-4">
-                <h4 className="font-mono uppercase tracking-widest text-sm font-semibold text-cyan-300 mb-3">
-                  Các khoản chi tiêu lớn
-                </h4>
-                <div className="space-y-2">
-                  {expenseList.slice(0, 5).map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="flex items-center justify-between py-2.5 border-b border-cyan-500/10 last:border-0 hover:bg-cyan-500/[0.04] px-3 rounded-lg transition-colors"
-                    >
-                      <div className="flex-1 flex items-center">
-                        <span className="text-lg font-mono text-rose-400 font-semibold whitespace-nowrap">
-                          -{tx.amount.toLocaleString('vi-VN')} VNĐ
-                        </span>
-                        <span className="text-[15px] text-white ml-3">
-                          {getCategoryName(tx.categoryId)}{' '}
-                          <span className="text-cyan-500/60 font-semibold">•</span>{' '}
-                          {getWalletName(tx.walletId)}
-                        </span>
-                      </div>
-                      <span className="text-[15px] text-slate-200 max-w-sm truncate text-right">
-                        {tx.note || '—'}
-                      </span>
+                    <div className="w-full bg-[#0d131f] rounded-full h-3 overflow-hidden border border-white/5">
+                      <div
+                        className={`h-full rounded-full transition-all ${isHighest ? 'bg-rose-400 shadow-[0_0_8px_#f43f5e]' : 'bg-cyan-500'}`}
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
-            </>
+
+                    {isExpanded && detailTxs.length > 0 && (
+                      <div className="mt-2 ml-4 pl-4 border-l border-cyan-500/20 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                        {detailTxs.map((tx) => (
+                          <div
+                            key={tx.id}
+                            className="flex items-center justify-between py-2 px-3 bg-[#080c14] rounded-lg hover:bg-cyan-500/[0.04] transition-colors"
+                          >
+                            <div className="flex flex-col gap-1 flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg font-mono text-rose-400 font-semibold whitespace-nowrap">
+                                  -{tx.amount.toLocaleString('vi-VN')} VNĐ
+                                </span>
+                                <span className="text-[13px] text-slate-200">
+                                  {getWalletName(tx.walletId)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[12px] text-slate-400">
+                                <Calendar size={12} />
+                                <span>{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('vi-VN') : '—'}</span>
+                                {tx.note && (
+                                  <>
+                                    <span className="text-cyan-500/60">•</span>
+                                    <span className="truncate max-w-xs">{tx.note}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
