@@ -8,7 +8,6 @@ export class SupabaseCategoryRepository {
             id: category.getId(),
             name: category.getName(),
             icon: category.getIcon(),
-            created_at: category.getCreatedAt(),
         });
         if (error) {
             throw new Error(`Lỗi khi lưu Category: ${error.message}`);
@@ -25,7 +24,7 @@ export class SupabaseCategoryRepository {
         return new Category(data.id, data.name, data.icon, data.created_at);
     }
     async findAll() {
-        const { data, error } = await supabase.from('categories').select('*').order('created_at', { ascending: true });
+        const { data, error } = await supabase.from('categories').select('*').order('id', { ascending: true });
         if (error || !data)
             return [];
         return data.map((item) => new Category(item.id, item.name, item.icon, item.created_at));
@@ -37,7 +36,6 @@ export class SupabaseCategoryRepository {
             id: category.getId(),
             name: category.getName(),
             icon: category.getIcon(),
-            created_at: category.getCreatedAt(),
         });
         if (error) {
             throw new Error(`Lỗi khi cập nhật Category: ${error.message}`);

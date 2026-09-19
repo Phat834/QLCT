@@ -10,7 +10,6 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
         id: category.getId(),
         name: category.getName(),
         icon: category.getIcon(),
-        created_at: category.getCreatedAt(),
       });
 
     if (error) {
@@ -31,7 +30,7 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
   }
 
   async findAll(): Promise<Category[]> {
-    const { data, error } = await supabase.from('categories').select('*').order('created_at', { ascending: true });
+    const { data, error } = await supabase.from('categories').select('*').order('id', { ascending: true });
 
     if (error || !data) return [];
 
@@ -45,7 +44,6 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
         id: category.getId(),
         name: category.getName(),
         icon: category.getIcon(),
-        created_at: category.getCreatedAt(),
       });
 
     if (error) {

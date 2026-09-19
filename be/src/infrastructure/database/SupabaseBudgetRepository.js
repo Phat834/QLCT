@@ -38,7 +38,7 @@ export class SupabaseBudgetRepository {
         return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null, data.created_at);
     }
     async findAll() {
-        const { data, error } = await supabase.from('budgets').select('*').order('created_at', { ascending: true });
+        const { data, error } = await supabase.from('budgets').select('*').order('created_at', { ascending: true, nullsFirst: false });
         if (error) {
             throw new Error(`Lỗi khi lấy danh sách Budget: ${error.message}`);
         }

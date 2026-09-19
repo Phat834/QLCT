@@ -10,7 +10,7 @@ export class UpdateBudgetUseCase {
             throw new Error('Không tìm thấy ngân sách!');
         const walletIds = dto.walletIds || existing.getWalletIds();
         const dueDate = dto.dueDate !== undefined ? dto.dueDate : existing.getDueDate();
-        const budget = new Budget(dto.categoryId, walletIds, dto.limitAmount, existing.getCurrentSpent(), dto.id, dueDate);
+        const budget = new Budget(dto.categoryId, walletIds, dto.limitAmount, existing.getCurrentSpent(), dto.id, dueDate, existing.getCreatedAt());
         await this.budgetRepo.save(budget);
         return budget;
     }

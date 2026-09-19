@@ -46,7 +46,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
   }
 
   async findAll(): Promise<Budget[]> {
-    const { data, error } = await supabase.from('budgets').select('*').order('created_at', { ascending: true });
+    const { data, error } = await supabase.from('budgets').select('*').order('created_at', { ascending: true, nullsFirst: false });
 
     if (error) {
       throw new Error(`Lỗi khi lấy danh sách Budget: ${error.message}`);
