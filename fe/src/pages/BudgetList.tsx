@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
 
@@ -31,7 +31,7 @@ export default function BudgetList() {
     forceRefresh((n) => n + 1);
   };
 
-  const getActualSpent = (catId: string, walletIds?: string[]) => {
+  const getActualSpent = useCallback((catId: string, walletIds?: string[]) => {
     const ids = walletIds || [];
     const isSavings = categories.find(c => c.id === catId)?.name.toLowerCase().includes('tiết kiệm');
 
@@ -44,7 +44,7 @@ export default function BudgetList() {
     return transactions
       .filter(t => t.type === 'EXPENSE' && t.categoryId === catId && (ids.length > 0 ? ids.includes(t.walletId) : true))
       .reduce((sum, t) => sum + t.amount, 0);
-  };
+  }, [categories, transactions, wallets]);
 
   const parseDueDate = (due?: string | null): Date | null => {
     if (!due) return null;
@@ -116,6 +116,50 @@ export default function BudgetList() {
   };
 
   const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#1a1f2b] border-gray-600 text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50';
+
+  const addMonth = (date: Date): Date => {
+    const d = new Date(date);
+    d.setMonth(d.getMonth() + 1);
+    return d;
+  };
+
+  const formatDueDateForApi = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      for (const b of budgets) {
+        const rawSpent = getActualSpent(b.categoryId, (b as any).walletIds || []);
+        const baseline = getResetBaseline(b.id);
+        const spent = Math.max(0, rawSpent - baseline);
+        const pct = b.limitAmount > 0 ? (spent / b.limitAmount) * 100 : 0;
+        const due = isDueDatePassed(b.dueDate);
+
+        if (pct >= 100 && due && b.dueDate) {
+          const currentDue = parseDueDate(b.dueDate);
+          if (currentDue) {
+            const nextDue = addMonth(currentDue);
+            resetBudget(b.id, rawSpent);
+            try {
+              await api.updateBudget(b.id, {
+                categoryId: b.categoryId,
+                walletIds: b.walletIds || [],
+                limitAmount: b.limitAmount,
+                dueDate: formatDueDateForApi(nextDue),
+              });
+              if (!mounted) return;
+              await refetch();
+            } catch (err) {
+              console.error('Auto reset budget failed:', err);
+            }
+          }
+        }
+      }
+    })();
+    return () => { mounted = false; };
+  }, [budgets, categories, transactions, wallets, refetch, getActualSpent]);
 
   return (
     <div className="min-h-screen bg-[#0b0e14] text-slate-200 font-sans">

@@ -1,3 +1,4 @@
+// Trang quản lý ví: hiển thị danh sách ví, cho phép thêm / sửa / xoá ví.
 import { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
