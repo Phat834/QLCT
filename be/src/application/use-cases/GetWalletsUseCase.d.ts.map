@@ -1,0 +1,1 @@
+{"version":3,"file":"GetWalletsUseCase.d.ts","sourceRoot":"","sources":["GetWalletsUseCase.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,iBAAiB,EAAE,MAAM,gDAAgD,CAAC;AAEnF,qBAAa,iBAAiB;IAChB,OAAO,CAAC,UAAU;IAA9B,YAAoB,UAAU,EAAE,iBAAiB,EAAI;IAE/C,OAAO,gEAEZ;CACF"}

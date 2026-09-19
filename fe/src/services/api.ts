@@ -22,7 +22,17 @@ export const api = {
   getWallets: () => fetchJson<any[]>(`${API_BASE}/wallets`),
   getCategories: () => fetchJson<any[]>(`${API_BASE}/categories`),
   getTransactions: () => fetchJson<any[]>(`${API_BASE}/transactions/all`),
-  getBudgets: () => fetchJson<any[]>(`${API_BASE}/budgets`),
+  getBudgets: () =>
+    fetchJson<any[]>(`${API_BASE}/budgets`).then((data) =>
+      data.map((b: any) => ({
+        ...b,
+        categoryId: b.categoryId ?? b.category_id,
+        walletIds: b.walletIds ?? b.wallet_ids,
+        limitAmount: b.limitAmount ?? b.limit_amount,
+        dueDate: b.dueDate ?? b.due_date,
+        createdAt: b.createdAt ?? b.created_at,
+      }))
+    ),
   getBudgetByCategory: (categoryId: string) => fetchJson<any>(`${API_BASE}/budgets/category/${categoryId}`),
   createExpense: (body: any) =>
     fetchJson<any>(`${API_BASE}/transactions/expense`, { method: 'POST', body: JSON.stringify(body) }),

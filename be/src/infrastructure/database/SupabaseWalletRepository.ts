@@ -45,7 +45,7 @@ export class SupabaseWalletRepository implements IWalletRepository {
   }
 
   async findAll(): Promise<Wallet[]> {
-    const { data, error } = await supabase.from('wallets').select('*');
+    const { data, error } = await supabase.from('wallets').select('*').order('created_at', { ascending: true });
 
     if (error) {
       throw new Error(`Lỗi khi lấy danh sách Wallet: ${error.message}`);

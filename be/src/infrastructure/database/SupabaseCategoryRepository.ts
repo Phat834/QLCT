@@ -26,15 +26,15 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
 
     if (error || !data) return null;
 
-    return new Category(data.id, data.name, data.icon);
+    return new Category(data.id, data.name, data.icon, data.created_at);
   }
 
   async findAll(): Promise<Category[]> {
-    const { data, error } = await supabase.from('categories').select('*');
+    const { data, error } = await supabase.from('categories').select('*').order('id', { ascending: true });
 
     if (error || !data) return [];
 
-    return data.map((item) => new Category(item.id, item.name, item.icon));
+    return data.map((item) => new Category(item.id, item.name, item.icon, item.created_at));
   }
 
   async update(category: Category): Promise<void> {
