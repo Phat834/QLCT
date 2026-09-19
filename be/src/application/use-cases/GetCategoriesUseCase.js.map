@@ -1,0 +1,1 @@
+{"version":3,"file":"GetCategoriesUseCase.js","sourceRoot":"","sources":["GetCategoriesUseCase.ts"],"names":[],"mappings":"AAEA,MAAM,OAAO,oBAAoB;IACX,YAAY;IAAhC,YAAoB,YAAiC;4BAAjC,YAAY;IAAwB,CAAC;IAEzD,KAAK,CAAC,OAAO;QACX,OAAO,MAAM,IAAI,CAAC,YAAY,CAAC,OAAO,EAAE,CAAC;IAC3C,CAAC;CACF"}

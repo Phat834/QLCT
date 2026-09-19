@@ -13,6 +13,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
         limit_amount: budget.getLimitAmount(),
         current_spent: budget.getCurrentSpent(),
         due_date: budget.getDueDate(),
+        created_at: budget.getCreatedAt(),
       });
 
     if (error) {
@@ -29,7 +30,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
 
     if (error || !data) return null;
 
-    return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null);
+    return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null, data.created_at);
   }
 
   async findByCategoryId(categoryId: string): Promise<Budget | null> {
@@ -41,18 +42,18 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
 
     if (error || !data) return null;
 
-    return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null);
+    return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null, data.created_at);
   }
 
   async findAll(): Promise<Budget[]> {
-    const { data, error } = await supabase.from('budgets').select('*');
+    const { data, error } = await supabase.from('budgets').select('*').order('created_at', { ascending: true });
 
     if (error) {
       throw new Error(`Lỗi khi lấy danh sách Budget: ${error.message}`);
     }
 
     return data.map(
-      (item) => new Budget(item.category_id, item.wallet_ids ?? [], Number(item.limit_amount), Number(item.current_spent), item.id, item.due_date ?? null)
+      (item) => new Budget(item.category_id, item.wallet_ids ?? [], Number(item.limit_amount), Number(item.current_spent), item.id, item.due_date ?? null, item.created_at)
     );
   }
 
