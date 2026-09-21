@@ -15,6 +15,7 @@ export default function TransactionList() {
 
   // Popup form state
   const [showModal, setShowModal] = useState(false);
+  const [detailModal, setDetailModal] = useState<{ open: boolean; tx: Transaction | null }>({ open: false, tx: null });
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('EXPENSE');
   const [walletId, setWalletId] = useState('');
@@ -145,6 +146,14 @@ export default function TransactionList() {
     setCategoryFilter('');
   };
 
+  const openDetail = (tx: Transaction) => {
+    setDetailModal({ open: true, tx });
+  };
+
+  const closeDetail = () => {
+    setDetailModal({ open: false, tx: null });
+  };
+
   const resetForm = () => {
     setAmount('');
     setType('EXPENSE');
@@ -185,11 +194,11 @@ export default function TransactionList() {
   if (loading) return <div className="text-center py-20 text-cyan-400 font-mono tracking-wider animate-pulse">Đang tải dữ liệu...</div>;
   if (error) return <div className="text-red-400 py-20 font-mono text-center">Lỗi: {error}</div>;
 
-  const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#0d131f] border-gray-700 text-white font-sans focus:outline-none focus:border-cyan-500/50';
+   const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#0d131f] border-gray-700 text-white font-sans focus:outline-none focus:border-cyan-500/50';
 
-  return (
+   return (
     <div className="min-h-screen bg-[var(--bg-page)] text-white font-sans">
-      {/* Tiêu đề trang: đã đổi sang text-white font-bold */}
+      {/* Tiêu đề trang */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-white font-mono tracking-wide">Giao dịch</h2>
         <button
@@ -260,7 +269,6 @@ export default function TransactionList() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[15px] font-sans border-collapse">
             <thead>
-              {/* Header bảng: đổi sang text-slate-400 sáng rõ */}
               <tr className="border-b border-cyan-500/20 text-slate-300 font-mono text-xs uppercase bg-black/20">
                 <th className="py-3 px-5">Loại</th>
                 <th className="py-3 px-5">Số tiền</th>
@@ -283,7 +291,6 @@ export default function TransactionList() {
                     <tr>
                       <td colSpan={6} className="px-5 py-1">
                         <div className="border-t border-cyan-500/30 my-1"></div>
-                        {/* Format ngày tháng giữ nguyên dạng Thứ X, không bị uppercase */}
                         <span className="font-mono text-[15px] font-semibold text-cyan-300 tracking-wider">
                           {group.date}
                         </span>
@@ -305,7 +312,8 @@ export default function TransactionList() {
                       return (
                         <tr
                           key={tx.id}
-                          className="hover:bg-cyan-500/[0.04] transition-colors group"
+                          className="hover:bg-cyan-500/[0.04] transition-colors group cursor-pointer"
+                          onClick={() => openDetail(tx)}
                         >
                           <td className="py-3.5 px-5 whitespace-nowrap">
                             <span
@@ -317,7 +325,6 @@ export default function TransactionList() {
                           <td className={`py-3.5 px-5 font-mono text-base font-semibold whitespace-nowrap ${amountColor}`}>
                             {isIncome ? '+' : '-'}{tx.amount.toLocaleString('vi-VN')} <span className="text-xs opacity-70">VNĐ</span>
                           </td>
-                          {/* Đã đổi sang text-white rõ nét */}
                           <td className="py-3.5 px-5 text-white text-[15px] whitespace-nowrap font-normal">
                             {tx.type === 'INCOME'
                               ? 'Tiền vào'
@@ -325,9 +332,7 @@ export default function TransactionList() {
                               ? 'Chuyển ví nội bộ'
                               : getCategoryName(tx.categoryId)}
                           </td>
-                          {/* Đã đổi sang text-white rõ nét */}
                           <td className="py-3.5 px-5 text-white text-[15px] whitespace-nowrap font-normal">{getWalletName(tx.walletId)}</td>
-                          {/* Đã đổi sang text-slate-200 rõ nét */}
                           <td className="py-3.5 px-5 text-slate-200 text-[15px] max-w-xs truncate">{tx.note || '—'}</td>
                           <td className="py-3.5 px-5 font-mono text-[15px] text-rose-400 text-right whitespace-nowrap font-medium">
                             {isLastInGroup
@@ -357,7 +362,7 @@ export default function TransactionList() {
         </div>
       </div>
 
-      {/* POPUP MODAL */}
+      {/* POPUP MODAL - Create Transaction */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-[#0b101b] border border-cyan-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-cyan-950/40">
@@ -456,6 +461,166 @@ export default function TransactionList() {
           </div>
         </div>
       )}
+
+      {/* DETAIL MODAL - Transaction Details */}
+      {detailModal.open && detailModal.tx && (
+        <TransactionDetailModal
+          tx={detailModal.tx}
+          categories={categories}
+          wallets={wallets}
+          onClose={closeDetail}
+        />
+      )}
+    </div>
+  );
+}
+
+function TransactionDetailModal({
+  tx,
+  categories,
+  wallets,
+  onClose,
+}: {
+  tx: Transaction;
+  categories: { id: string; name: string }[];
+  wallets: { id: string; name: string; type: string }[];
+  onClose: () => void;
+}) {
+  const getCategoryName = (catId?: string) => {
+    if (!catId) return 'Chưa phân loại';
+    return categories.find((c) => c.id === catId)?.name || catId;
+  };
+
+  const getWalletName = (wId: string) => {
+    return wallets.find((w) => w.id === wId)?.name || wId;
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hour = String(d.getHours()).padStart(2, '0');
+    const minute = String(d.getMinutes()).padStart(2, '0');
+    const weekdays = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    const weekday = weekdays[d.getDay()];
+    return `${day}/${month}/${year} - ${weekday} ${hour}:${minute}`;
+  };
+
+  const getTypeLabel = (txType: string) => {
+    switch (txType) {
+      case 'INCOME': return 'Thu nhập';
+      case 'EXPENSE': return 'Chi tiêu';
+      case 'TRANSFER': return 'Chuyển tiền';
+      default: return txType;
+    }
+  };
+
+  const getTypeStyle = (txType: string) => {
+    switch (txType) {
+      case 'INCOME': return 'bg-teal-500/10 text-teal-400 border-teal-500/30';
+      case 'EXPENSE': return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+      case 'TRANSFER': return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30';
+      default: return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const getAmountColor = (txType: string) => {
+    switch (txType) {
+      case 'INCOME': return 'text-teal-400';
+      case 'EXPENSE': return 'text-rose-400';
+      case 'TRANSFER': return 'text-cyan-400';
+      default: return 'text-white';
+    }
+  };
+
+  const isIncome = tx.type === 'INCOME';
+  const isTransfer = tx.type === 'TRANSFER';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-[#0b101b] border border-cyan-500/40 rounded-2xl p-6 max-w-lg w-full shadow-2xl shadow-cyan-950/40 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-5 border-b border-cyan-500/20 pb-3">
+          <h3 className="text-xl font-bold text-cyan-300 font-mono uppercase tracking-widest">Chi tiết giao dịch</h3>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Type Badge & Amount */}
+          <div className="flex items-center gap-3">
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-mono font-medium border ${getTypeStyle(tx.type)}`}
+            >
+              {getTypeLabel(tx.type)}
+            </span>
+            <span className={`font-mono text-xl font-bold ${getAmountColor(tx.type)}`}>
+              {isIncome ? '+' : '-'}{tx.amount.toLocaleString('vi-VN')} VNĐ
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Date */}
+            <div>
+              <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1">Thời gian</label>
+              <p className="text-white text-[15px] font-sans whitespace-pre-wrap">{formatDate(tx.createdAt)}</p>
+            </div>
+
+            {/* Category / Transfer Type */}
+            <div>
+              <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1">
+                {isTransfer ? 'Loại' : 'Danh mục'}
+              </label>
+              <p className="text-white text-[15px] font-sans">
+                {tx.type === 'INCOME'
+                  ? 'Tiền vào'
+                  : isTransfer
+                  ? 'Chuyển ví nội bộ'
+                  : getCategoryName(tx.categoryId)}
+              </p>
+            </div>
+
+            {/* Source Wallet */}
+            <div>
+              <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1">
+                {isTransfer ? 'Ví nguồn' : 'Ví'}
+              </label>
+              <p className="text-white text-[15px] font-sans">{getWalletName(tx.walletId)}</p>
+            </div>
+
+            {/* Target Wallet (for transfer) */}
+            {isTransfer && tx.targetWalletId && (
+              <div>
+                <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1">Ví đích</label>
+                <p className="text-white text-[15px] font-sans">{getWalletName(tx.targetWalletId)}</p>
+              </div>
+            )}
+
+            {/* ID */}
+            <div className="col-span-2">
+              <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-1">Mã giao dịch</label>
+              <p className="text-slate-300 text-[13px] font-mono break-all">{tx.id}</p>
+            </div>
+          </div>
+
+          {/* Note - Full content, no truncation */}
+          <div className="pt-2 border-t border-cyan-500/20">
+            <label className="block text-xs font-mono text-slate-400 uppercase tracking-wider mb-2">Ghi chú</label>
+            <div className="bg-[#080c14] border border-cyan-500/10 rounded-lg p-4 min-h-[80px]">
+              {tx.note && tx.note.trim() ? (
+                <p className="text-slate-200 text-[15px] font-sans whitespace-pre-wrap break-words">{tx.note}</p>
+              ) : (
+                <p className="text-slate-500 text-[15px] font-sans italic">— Không có ghi chú —</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
