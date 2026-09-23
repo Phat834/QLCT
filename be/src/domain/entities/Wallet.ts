@@ -14,9 +14,6 @@ export class Wallet {
     createdAt?: Date,
     type: WalletType = WalletType.AVAILABLE
   ) {
-    if (initialBalance < 0) {
-      throw new Error("Số dư ban đầu không được âm");
-    }
     this.id = id;
     this.name = name;
     this.balance = initialBalance;

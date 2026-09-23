@@ -67,7 +67,14 @@ export default function BudgetList() {
     return d ? d.toLocaleDateString('vi-VN') : '';
   };
 
-  const resetForm = () => { setCategoryId(''); setWalletIds([]); setLimitAmount(''); setDueDate(''); setEditingId(null); setError(''); };
+  const resetForm = () => { 
+    setCategoryId(''); 
+    setWalletIds([]); 
+    setLimitAmount(''); 
+    setDueDate(''); 
+    setEditingId(null); 
+    setError(''); 
+  };
 
   const handleAddClick = () => {
     if (wallets.length === 0) return setShowWarning(true);
@@ -92,17 +99,21 @@ export default function BudgetList() {
       resetForm();
       setShowModal(false);
       await refetch();
-    } catch (err: any) { setError(err.message); }
-    finally { setLoading(false); }
+    } catch (err: any) { 
+      setError(err.message); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xoá?')) return;
     try {
       await api.deleteBudget(id);
-      await api.deleteBudget(id);
       await refetch();
-    } catch (err: any) { setError(err.message); }
+    } catch (err: any) { 
+      setError(err.message); 
+    }
   };
 
   const startEdit = (b: any) => {
@@ -190,7 +201,7 @@ export default function BudgetList() {
       <div className="space-y-4">
         {budgets.map((b) => {
           const cat = categories.find((c) => c.id === b.categoryId);
-          const budgetWallets = wallets.filter((w) => (b as any).walletIds?.includes(w.id) || (b as any).walletIds?.includes(w.id));
+          const budgetWallets = wallets.filter((w) => (b as any).walletIds?.includes(w.id));
           const rawSpent = getActualSpent(b.categoryId, (b as any).walletIds || []);
           const baseline = getResetBaseline(b.id);
           const spent = Math.max(0, rawSpent - baseline);
@@ -220,7 +231,7 @@ export default function BudgetList() {
                   {pct >= 100 && (
                     <button
                       onClick={() => resetBudget(b.id, spent)}
-                      className="px-2 py-1 text-xs text-white bg-amber-500 hover:bg-amber-400 rounded font-mono transition"
+                      className="px-4 py-2 text-sm text-white bg-amber-500 hover:bg-amber-400 rounded-lg font-mono transition flex items-center gap-2"
                       title="Reset về 0"
                     >
                       Reset
@@ -228,17 +239,17 @@ export default function BudgetList() {
                   )}
                   <button
                     onClick={() => startEdit(b)}
-                    className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
+                    className="border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
                     title="Sửa"
                   >
-                    <Pencil size={15} />
+                    <Pencil size={16} /> Sửa
                   </button>
                   <button
                     onClick={() => handleDelete(b.id)}
-                    className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
+                    className="border border-red-500/40 text-red-400 hover:bg-red-500/10 font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
                     title="Xoá"
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={16} /> Xoá
                   </button>
                 </div>
               </div>
