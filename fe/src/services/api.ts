@@ -19,9 +19,31 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  getWallets: () => fetchJson<any[]>(`${API_BASE}/wallets`),
-  getCategories: () => fetchJson<any[]>(`${API_BASE}/categories`),
-  getTransactions: () => fetchJson<any[]>(`${API_BASE}/transactions/all`),
+  getWallets: () =>
+    fetchJson<any[]>(`${API_BASE}/wallets`).then((data) =>
+      data.map((w: any) => ({
+        ...w,
+        createdAt: w.createdAt ?? w.created_at,
+        walletType: w.walletType ?? w.type,
+      }))
+    ),
+  getCategories: () =>
+    fetchJson<any[]>(`${API_BASE}/categories`).then((data) =>
+      data.map((c: any) => ({
+        ...c,
+        createdAt: c.createdAt ?? c.created_at,
+      }))
+    ),
+  getTransactions: () =>
+    fetchJson<any[]>(`${API_BASE}/transactions/all`).then((data) =>
+      data.map((t: any) => ({
+        ...t,
+        walletId: t.walletId ?? t.wallet_id,
+        categoryId: t.categoryId ?? t.category_id,
+        targetWalletId: t.targetWalletId ?? t.target_wallet_id,
+        createdAt: t.createdAt ?? t.created_at,
+      }))
+    ),
   getBudgets: () =>
     fetchJson<any[]>(`${API_BASE}/budgets`).then((data) =>
       data.map((b: any) => ({
