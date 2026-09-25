@@ -62,6 +62,17 @@ export default function BudgetList() {
     return d.getTime() <= today.getTime();
   };
 
+  const getDueDateStatus = (due?: string | null) => {
+    const d = parseDueDate(due);
+    if (!d) return 'normal';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysUntilDue = Math.ceil((d.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+    if (daysUntilDue <= 0) return 'danger';
+    if (daysUntilDue <= 6) return 'warning';
+    return 'normal';
+  };
+
   const formatDueDate = (due?: string | null) => {
     const d = parseDueDate(due);
     return d ? d.toLocaleDateString('vi-VN') : '';
@@ -210,7 +221,17 @@ export default function BudgetList() {
           const progressColor = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-emerald-500';
           const badgeBg = pct >= 100 ? 'bg-red-500/10 text-red-400 border border-red-500/30' : pct >= 80 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
 
-          const due = isDueDatePassed(b.dueDate);
+          const dueStatus = getDueDateStatus(b.dueDate);
+          const dueBadgeBg = dueStatus === 'danger'
+            ? 'bg-red-500/10 text-red-400 border border-red-500/30'
+            : dueStatus === 'warning'
+              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+              : 'bg-sky-500/10 text-sky-400 border border-sky-500/30';
+          const dueLabel = dueStatus === 'danger'
+            ? 'Đến hạn trả:'
+            : dueStatus === 'warning'
+              ? 'Sắp đến hạn trả:'
+              : 'Hẹn trả:';
 
           return (
             <div key={b.id} className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 p-5 hover:border-cyan-400 transition-colors backdrop-blur-md">
@@ -221,8 +242,8 @@ export default function BudgetList() {
                     <Wallet size={12} /> {budgetWallets.length > 0 ? budgetWallets.map((w) => w.name).join(', ') : 'Chưa chọn ví'}
                   </span>
                   {b.dueDate && (
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${due ? 'bg-red-500/10 text-red-400 border border-red-500/30' : 'bg-sky-500/10 text-sky-400 border border-sky-500/30'}`}>
-                      <Calendar size={12} /> Hẹn trả: {formatDueDate(b.dueDate)}
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${dueBadgeBg}`}>
+                      <Calendar size={12} /> {dueLabel} {formatDueDate(b.dueDate)}
                     </span>
                   )}
                 </div>
