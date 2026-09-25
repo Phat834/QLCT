@@ -1,10 +1,16 @@
-import { useState, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useApp } from '../contexts/AppContext';
 import type { Transaction } from '../contexts/AppContext';
 import { api } from '../services/api';
 import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency } from '../utils/currency';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
+
+type TransactionGroup = {
+  date: Date;
+  dateKey: string;
+  items: Transaction[];
+};
 
 export default function TransactionList() {
   const { transactions, categories, wallets, loading, error, refetch } = useApp();
@@ -12,6 +18,7 @@ export default function TransactionList() {
   const [toDate, setToDate] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
 
   // Popup form state
   const [showModal, setShowModal] = useState(false);
@@ -50,45 +57,113 @@ export default function TransactionList() {
   const from = fromDate ? startOfDay(fromDate) : null;
   const to = toDate ? endOfDay(toDate) : null;
 
-  const filtered = transactions.filter((tx) => {
-    if (!tx.createdAt) return true;
-    const d = new Date(tx.createdAt);
-    if (from && d < from) return false;
-    if (to && d > to) return false;
-    if (typeFilter && tx.type !== typeFilter) return false;
-    if (categoryFilter && tx.categoryId !== categoryFilter) return false;
-    return true;
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [fromDate, toDate, typeFilter, categoryFilter]);
+
+  const getTransactionTime = (tx: Transaction) => {
+    if (!tx.createdAt) return null;
+    const timestamp = new Date(tx.createdAt).getTime();
+    return Number.isNaN(timestamp) ? null : timestamp;
+  };
+
+  const getLocalDateKey = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getDateFromKey = (dateKey: string) => {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const getLocalDayTime = (date: Date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+
+  const startOfWeek = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const daysFromMonday = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - daysFromMonday);
+    return d;
+  };
+
+  const filtered = [...transactions]
+    .filter((tx) => {
+      if (!tx.createdAt) return true;
+      const d = new Date(tx.createdAt);
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      if (typeFilter && tx.type !== typeFilter) return false;
+      if (categoryFilter && tx.categoryId !== categoryFilter) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const aTime = getTransactionTime(a);
+      const bTime = getTransactionTime(b);
+      if (aTime === null && bTime === null) return 0;
+      if (aTime === null) return 1;
+      if (bTime === null) return -1;
+      return aTime - bTime;
+    });
+
+  const transactionsByDate = new Map<string, Transaction[]>();
+  filtered.forEach((tx) => {
+    const timestamp = getTransactionTime(tx);
+    if (timestamp === null) return;
+    const date = new Date(timestamp);
+    const dateKey = getLocalDateKey(date);
+    const items = transactionsByDate.get(dateKey) || [];
+    items.push(tx);
+    transactionsByDate.set(dateKey, items);
   });
 
-  // Format chuẩn: 14/09/2026 - Thứ 2
-  const formatDateWithDay = (dateStr: string): string => {
-    const d = new Date(dateStr);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
+  const sortedDateKeys = [...transactionsByDate.keys()].sort();
+  const firstDate = sortedDateKeys.length > 0
+    ? getDateFromKey(sortedDateKeys[0])
+    : from || new Date();
+  const lastDate = sortedDateKeys.length > 0
+    ? getDateFromKey(sortedDateKeys[sortedDateKeys.length - 1])
+    : firstDate;
+  const firstPageDate = startOfWeek(firstDate);
+  const daysPerPage = 7;
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  const totalDays = Math.max(
+    daysPerPage,
+    Math.floor((getLocalDayTime(lastDate) - getLocalDayTime(firstPageDate)) / millisecondsPerDay) + 1
+  );
+  const totalPages = Math.ceil(totalDays / daysPerPage);
+  const safeCurrentPage = Math.min(currentPage, Math.max(0, totalPages - 1));
+  const calendarGroups: TransactionGroup[] = Array.from({ length: totalDays }, (_, index) => {
+    const date = new Date(firstPageDate);
+    date.setDate(date.getDate() + index);
+    const dateKey = getLocalDateKey(date);
+    return {
+      date,
+      dateKey,
+      items: transactionsByDate.get(dateKey) || [],
+    };
+  });
+  const pagedGroups = calendarGroups.slice(safeCurrentPage * daysPerPage, (safeCurrentPage + 1) * daysPerPage);
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
+  };
+
+  const formatDateWithDay = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
     const weekdays = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-    const weekday = weekdays[d.getDay()];
+    const weekday = weekdays[date.getDay()];
     return `${day}/${month}/${year} - ${weekday}`;
   };
 
-  const grouped = filtered.reduce((groups, tx) => {
-    const dateKey = tx.createdAt
-      ? formatDateWithDay(tx.createdAt)
-      : 'Không rõ ngày';
-    const last = groups[groups.length - 1];
-    if (last && last.date === dateKey) {
-      last.items.push(tx);
-    } else {
-      groups.push({ date: dateKey, items: [tx] });
-    }
-    return groups;
-  }, [] as { date: string; items: typeof filtered }[]);
-
-  const expenseByDate = grouped.reduce((map, group) => {
+  const expenseByDate = calendarGroups.reduce((map, group) => {
     const total = group.items
       .filter((tx) => tx.type === 'EXPENSE')
       .reduce((sum, tx) => sum + tx.amount, 0);
-    map[group.date] = total;
+    map[group.dateKey] = total;
     return map;
   }, {} as Record<string, number>);
 
@@ -129,14 +204,16 @@ export default function TransactionList() {
   const dayEndBalances: Record<string, number> = {};
   let cumulative = balanceAtWindowStart;
 
-  // Process filtered transactions in chronological order (grouped is already chronological)
-  grouped.forEach((group) => {
-    // Sort items within group by date to ensure correct intra-day order
-    const sortedItems = [...group.items].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+  calendarGroups.forEach((group) => {
+    const sortedItems = [...group.items].sort((a, b) => {
+      const aTime = getTransactionTime(a);
+      const bTime = getTransactionTime(b);
+      return (aTime || 0) - (bTime || 0);
+    });
     sortedItems.forEach((tx) => {
       cumulative += availableDelta(tx);
     });
-    dayEndBalances[group.date] = cumulative;
+    dayEndBalances[group.dateKey] = cumulative;
   });
 
   const clearFilter = () => {
@@ -279,25 +356,29 @@ export default function TransactionList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-slate-400 font-mono text-[15px]">
-                    Chưa có giao dịch nào
-                  </td>
-                </tr>
-              ) : (
-                grouped.map((group) => (
-                  <Fragment key={group.date}>
+              {pagedGroups.map((group) => {
+                const isEmpty = group.items.length === 0;
+                return (
+                  <Fragment key={group.dateKey}>
                     <tr>
                       <td colSpan={6} className="px-5 py-1">
                         <div className="border-t border-cyan-500/30 my-1"></div>
                         <span className="font-mono text-[15px] font-semibold text-cyan-300 tracking-wider">
-                          {group.date}
+                          {formatDateWithDay(group.date)}
                         </span>
                         <div className="border-b border-cyan-500/10 mt-1"></div>
                       </td>
                     </tr>
-                    {group.items.map((tx, txIndex) => {
+                    {isEmpty ? (
+                      <tr>
+                        <td colSpan={5} className="px-5 py-6 text-center text-slate-500 font-mono text-[15px]">
+                          Không có giao dịch
+                        </td>
+                        <td className="py-3.5 px-5 font-mono text-[15px] text-slate-500 text-right whitespace-nowrap">
+                          0 VNĐ
+                        </td>
+                      </tr>
+                    ) : group.items.map((tx, txIndex) => {
                       const isIncome = tx.type === 'INCOME';
                       const isExpense = tx.type === 'EXPENSE';
                       const isLastInGroup = txIndex === group.items.length - 1;
@@ -336,8 +417,8 @@ export default function TransactionList() {
                           <td className="py-3.5 px-5 text-slate-200 text-[15px] max-w-xs truncate">{tx.note || '—'}</td>
                           <td className="py-3.5 px-5 font-mono text-[15px] text-rose-400 text-right whitespace-nowrap font-medium">
                             {isLastInGroup
-                              ? expenseByDate[group.date] > 0
-                                ? `${expenseByDate[group.date].toLocaleString('vi-VN')} VNĐ`
+                              ? expenseByDate[group.dateKey] > 0
+                                ? `${expenseByDate[group.dateKey].toLocaleString('vi-VN')} VNĐ`
                                 : '0 VNĐ'
                               : '—'}
                           </td>
@@ -348,18 +429,45 @@ export default function TransactionList() {
                       <td colSpan={6} className="px-5 py-2 border-t border-cyan-500/10 text-right text-slate-300 text-sm font-mono">
                         Số dư khả dụng cuối ngày:{' '}
                         <span className="text-cyan-300">
-                          {dayEndBalances[group.date] !== undefined
-                            ? `${dayEndBalances[group.date].toLocaleString('vi-VN')} VNĐ`
-                            : '-'}
+                          {dayEndBalances[group.dateKey] !== undefined
+                            ? `${dayEndBalances[group.dateKey].toLocaleString('vi-VN')} VNĐ`
+                            : '0 VNĐ'}
                         </span>
                       </td>
                     </tr>
                   </Fragment>
-                ))
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-cyan-500/20 px-6 py-4">
+        <button
+          type="button"
+          onClick={() => goToPage(safeCurrentPage - 1)}
+          disabled={safeCurrentPage === 0}
+          className="flex items-center gap-1.5 border border-cyan-500/40 px-4 py-2 rounded-lg text-slate-200 font-mono hover:bg-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent transition"
+        >
+          <ChevronLeft size={16} /> Trước
+        </button>
+        <div className="text-center font-mono">
+          <div className="text-slate-200 text-sm font-semibold">
+            Trang {safeCurrentPage + 1} / {totalPages}
+          </div>
+          <div className="text-slate-500 text-xs mt-1">
+            {formatDateWithDay(pagedGroups[0].date)} → {formatDateWithDay(pagedGroups[pagedGroups.length - 1].date)}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => goToPage(safeCurrentPage + 1)}
+          disabled={safeCurrentPage >= totalPages - 1}
+          className="flex items-center gap-1.5 border border-cyan-500/40 px-4 py-2 rounded-lg text-slate-200 font-mono hover:bg-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent transition"
+        >
+          Sau <ChevronRight size={16} />
+        </button>
       </div>
 
       {/* POPUP MODAL - Create Transaction */}
