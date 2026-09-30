@@ -1,0 +1,36 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.iconWrapper {
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 1rem;
+  background: rgb(245 158 11 / 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  width: 3rem;
+  height: 3rem;
+  color: #fbbf24;
+  stroke-width: 2.5;
+}
+
+.text {
+  margin: 0;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.375;
+}

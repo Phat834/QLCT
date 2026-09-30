@@ -12,6 +12,7 @@ import { useTransactionForm } from './TransactionList/hooks/useTransactionForm';
 import { useTransactionBalances } from './TransactionList/hooks/useTransactionBalances';
 import { useTransactionPagination } from './TransactionList/hooks/useTransactionPagination';
 import type { TransactionFilterValues } from './TransactionList/utils/transactionUtils';
+import ErrorState from '../components/ErrorState';
 
 const emptyFilters: TransactionFilterValues = {
   fromDate: '',
@@ -57,7 +58,7 @@ export default function TransactionList() {
     return <div className={styles.loading}>Đang tải dữ liệu...</div>;
   }
   if (error) {
-    return <div className={styles.error}>Lỗi: {error}</div>;
+    return <ErrorState message="Không thể tải danh sách giao dịch khi chưa thực hiện giao dịch nào." />;
   }
 
   return (

@@ -23,6 +23,22 @@ export default function TransactionTable({
   getWalletName,
   onOpenDetail,
 }: TransactionTableProps) {
+  const hasTransactions = groups.some((group) => group.items.length > 0);
+
+  if (!hasTransactions) {
+    return (
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <div className={styles.headerContent}>
+            <span className={styles.statusDot} />
+            <h3 className={styles.cardTitle}>Giao dịch gần đây</h3>
+          </div>
+        </div>
+        <div className={styles.emptyState}>Hiện tại chưa có giao dịch nào để hiển thị</div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.card}>
       <div className={styles.cardHeader}>
@@ -45,7 +61,6 @@ export default function TransactionTable({
           </thead>
           <tbody className={styles.body}>
             {groups.map((group) => {
-              const isEmpty = group.items.length === 0;
               const expenseTotal = expenseByDate[group.dateKey] || 0;
 
               return (
@@ -57,12 +72,7 @@ export default function TransactionTable({
                       <div className={styles.dateLineBottom} />
                     </td>
                   </tr>
-                  {isEmpty ? (
-                    <tr>
-                      <td colSpan={5} className={styles.emptyCell}>Không có giao dịch</td>
-                      <td className={`${styles.cell} ${styles.emptyAmountCell}`}>0 VNĐ</td>
-                    </tr>
-                  ) : group.items.map((tx, txIndex) => (
+                  {group.items.map((tx, txIndex) => (
                     <TransactionRow
                       key={tx.id}
                       tx={tx}
