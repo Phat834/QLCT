@@ -1,6 +1,7 @@
 ﻿import { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { TrendingUp, TrendingDown, Wallet, Layers, Calendar, ChevronDown } from 'lucide-react';
+import ErrorState from '../components/ErrorState';
 
 export default function Dashboard() {
   const { wallets, transactions, categories, loading, error } = useApp();
@@ -56,7 +57,7 @@ export default function Dashboard() {
   }, [monthExpenses, categories]);
 
   if (loading) return <div className="text-center py-20 text-cyan-400 font-mono tracking-wider animate-pulse">Đang tải dữ liệu...</div>;
-  if (error) return <div className="text-red-400 py-20 font-mono text-center">Lỗi: {error}</div>;
+  if (error) return <ErrorState message="Không thể tải dữ liệu tài chính do chưa có dữ liệu giao dịch." />;
 
   const totalIncome = transactions
     .filter((t) => t.type === 'INCOME')
@@ -142,7 +143,23 @@ export default function Dashboard() {
           </div>
 
           {expensesByCategory.length === 0 ? (
-            <p className="text-slate-400 font-mono text-center py-8">Chưa có chi tiêu nào trong tháng này</p>
+            <div
+              style={{
+                margin: 0,
+                padding: '3rem 1.5rem',
+                color: '#e2e8f0',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                fontWeight: 700,
+                fontSize: '1rem',
+                lineHeight: 1.375,
+                textAlign: 'center',
+                background: '#0d121c',
+                border: '1px solid rgb(34 211 238 / 0.3)',
+                borderRadius: '1rem',
+              }}
+            >
+              Hiện tại chưa có giao dịch nào để hiển thị
+            </div>
           ) : (
             <div className="space-y-3">
               {expensesByCategory.map((cat, idx) => {

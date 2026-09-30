@@ -6,4 +6,5 @@ export interface IBudgetRepository {
   findByCategoryId(categoryId: string): Promise<Budget | null>;
   findAll(): Promise<Budget[]>;
   delete(id: string): Promise<void>;
+  updateSortOrder(items: { id: string; sortOrder: number }[]): Promise<void>;
 }

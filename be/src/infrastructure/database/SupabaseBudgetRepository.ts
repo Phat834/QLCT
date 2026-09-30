@@ -14,6 +14,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
         current_spent: budget.getCurrentSpent(),
         due_date: budget.getDueDate(),
         created_at: budget.getCreatedAt(),
+        sort_order: budget.getSortOrder(),
       });
 
     if (error) {
@@ -30,7 +31,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
 
     if (error || !data) return null;
 
-    return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null, data.created_at);
+    return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null, data.created_at, data.sort_order ?? 0);
   }
 
   async findByCategoryId(categoryId: string): Promise<Budget | null> {
@@ -42,18 +43,18 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
 
     if (error || !data) return null;
 
-    return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null, data.created_at);
+    return new Budget(data.category_id, data.wallet_ids ?? [], Number(data.limit_amount), Number(data.current_spent), data.id, data.due_date ?? null, data.created_at, data.sort_order ?? 0);
   }
 
   async findAll(): Promise<Budget[]> {
-    const { data, error } = await supabase.from('budgets').select('*').order('created_at', { ascending: true, nullsFirst: false });
+    const { data, error } = await supabase.from('budgets').select('*').order('sort_order', { ascending: true, nullsFirst: false });
 
     if (error) {
       throw new Error(`Lỗi khi lấy danh sách Budget: ${error.message}`);
     }
 
     return data.map(
-      (item) => new Budget(item.category_id, item.wallet_ids ?? [], Number(item.limit_amount), Number(item.current_spent), item.id, item.due_date ?? null, item.created_at)
+      (item) => new Budget(item.category_id, item.wallet_ids ?? [], Number(item.limit_amount), Number(item.current_spent), item.id, item.due_date ?? null, item.created_at, item.sort_order ?? 0)
     );
   }
 
@@ -65,6 +66,17 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
 
     if (error) {
       throw new Error(`Lỗi khi xoá Budget: ${error.message}`);
+    }
+  }
+
+  async updateSortOrder(items: { id: string; sortOrder: number }[]): Promise<void> {
+    const updates = items.map(({ id, sortOrder }) =>
+      supabase.from('budgets').update({ sort_order: sortOrder }).eq('id', id)
+    );
+    const results = await Promise.all(updates);
+    const errors = results.filter((r) => r.error);
+    if (errors.length > 0) {
+      throw new Error(`Lỗi khi cập nhật thứ tự: ${errors.map((e) => e.error?.message).join(', ')}`);
     }
   }
 }

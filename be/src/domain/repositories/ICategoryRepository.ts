@@ -6,4 +6,5 @@ export interface ICategoryRepository {
   findAll(): Promise<Category[]>;
   update(category: Category): Promise<void>;
   delete(id: string): Promise<void>;
+  updateSortOrder(items: { id: string; sortOrder: number }[]): Promise<void>;
 }

@@ -1,0 +1,148 @@
+.page {
+  min-height: 100vh;
+  background: #0b0e14;
+  color: #e2e8f0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  margin: 0;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #06b6d4;
+  color: #0b0e14;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+.addButton:hover { background: #22d3ee; }
+
+.summaryCard {
+  border: 1px solid rgb(34 211 238 / 0.3);
+  border-radius: 1rem;
+  background: rgb(13 18 28 / 0.9);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1), 0 10px 30px -10px rgb(8 51 68 / 0.2);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+}
+.summaryContent { display: flex; align-items: center; gap: 1rem; }
+.summaryIcon { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; background: rgb(34 211 238 / 0.1); color: #22d3ee; }
+.summaryLabel { display: block; color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.summaryValue { margin: 0; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 1.25rem; font-weight: 700; }
+
+.cardList { display: flex; flex-direction: column; gap: 1rem; }
+.emptyState { margin: 0; padding: 2rem; color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-align: center; }
+
+.budgetCard {
+  border: 1px solid rgb(34 211 238 / 0.3);
+  border-radius: 1rem;
+  background: rgb(13 18 28 / 0.9);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1), 0 10px 30px -10px rgb(8 51 68 / 0.2);
+  padding: 1.25rem;
+  transition: border-color 150ms;
+}
+.budgetCard:hover { border-color: #22d3ee; }
+.cardTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+.cardTitleGroup { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.cardTitle { margin: 0; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 1.125rem; font-weight: 700; }
+.walletPill { display: inline-flex; align-items: center; gap: 0.375rem; border: 1px solid rgb(99 102 241 / 0.4); border-radius: 999px; background: rgb(99 102 241 / 0.1); color: #818cf8; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.625rem; }
+.duePill { display: inline-flex; align-items: center; gap: 0.375rem; border: 1px solid; border-radius: 999px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.625rem; }
+.dueNormal { border-color: rgb(14 165 233 / 0.3); background: rgb(14 165 233 / 0.1); color: #38bdf8; }
+.dueWarning { border-color: rgb(245 158 11 / 0.3); background: rgb(245 158 11 / 0.1); color: #fbbf24; }
+.dueDanger { border-color: rgb(239 68 68 / 0.3); background: rgb(239 68 68 / 0.1); color: #f87171; }
+.cardActions { display: flex; align-items: center; gap: 0.5rem; }
+.resetButton { border: 0; border-radius: 0.5rem; background: #f59e0b; color: #fff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.875rem; padding: 0.5rem 1rem; cursor: pointer; transition: background-color 150ms; }
+.resetButton:hover { background: #fbbf24; }
+.editButton, .deleteButton {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  border: 1px solid; border-radius: 0.5rem; background: transparent;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.025em; padding: 0.5rem 1rem; cursor: pointer; transition: background-color 150ms;
+}
+.editButton { border-color: rgb(34 211 238 / 0.4); color: #22d3ee; }
+.editButton:hover { background: rgb(34 211 238 / 0.1); }
+.deleteButton { border-color: rgb(239 68 68 / 0.4); color: #f87171; }
+.deleteButton:hover { background: rgb(239 68 68 / 0.1); }
+
+.amountRow { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; }
+.amountGroup { display: flex; align-items: baseline; gap: 0.375rem; }
+.spentAmount { color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 1.125rem; font-weight: 700; }
+.limitAmount { color: #94a3b8; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.875rem; font-weight: 500; }
+.percentageBadge { display: inline-flex; align-items: center; border: 1px solid; border-radius: 0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.75rem; font-weight: 700; padding: 0.125rem 0.5rem; }
+.badgeNormal { border-color: rgb(16 185 129 / 0.3); background: rgb(16 185 129 / 0.1); color: #34d399; }
+.badgeWarning { border-color: rgb(245 158 11 / 0.3); background: rgb(245 158 11 / 0.1); color: #fbbf24; }
+.badgeDanger { border-color: rgb(239 68 68 / 0.3); background: rgb(239 68 68 / 0.1); color: #f87171; }
+.progressTrack { width: 100%; height: 0.625rem; border-radius: 999px; background: #1a1f2b; overflow: hidden; padding: 0.125rem; }
+.progressFill { height: 100%; border-radius: 999px; transition: width 300ms; }
+.progressNormal { background: #10b981; }
+.progressWarning { background: #f59e0b; }
+.progressDanger { background: #ef4444; box-shadow: 0 0 8px #f43f5e; }
+
+.modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / 0.6); padding: 1rem; backdrop-filter: blur(4px); }
+.modalInner {
+  width: 100%; max-width: 28rem; overflow: hidden;
+  border: 1px solid rgb(34 211 238 / 0.3); border-radius: 1rem;
+  background: #0d121c; box-shadow: 0 25px 50px -12px rgb(8 51 68 / 0.3); padding: 1.5rem;
+}
+.modalHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgb(34 211 238 / 0.2); }
+.modalTitle { margin: 0; color: #67e8f9; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 1.25rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; }
+.iconButton { display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; padding: 0.25rem; color: #94a3b8; cursor: pointer; transition: color 150ms; }
+.iconButton:hover { color: #e2e8f0; }
+.form { display: flex; flex-direction: column; gap: 1rem; }
+.formGroup { min-width: 0; }
+.label { display: block; margin-bottom: 0.25rem; color: #e2e8f0; font-size: 0.875rem; font-weight: 500; }
+.input {
+  width: 100%; box-sizing: border-box;
+  border: 1px solid #374151; border-radius: 0.5rem;
+  background: #1a1f2b; padding: 0.5rem 0.75rem;
+  color: #e2e8f0; font-family: inherit; outline: none; transition: border-color 150ms;
+}
+.input:focus { border-color: rgb(34 211 238 / 0.5); }
+.walletList { max-height: 12rem; overflow-y: auto; border: 1px solid #374151; border-radius: 0.5rem; background: #1a1f2b; padding: 0.5rem; }
+.walletItem { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.checkbox { border-radius: 0.25rem; border-color: #374151; accent-color: #06b6d4; }
+.walletName { color: #e2e8f0; font-size: 0.875rem; }
+.noWallets { margin: 0; color: #64748b; font-size: 0.75rem; text-align: center; }
+.formError { margin: 0; color: #f87171; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.875rem; }
+.actions { display: flex; gap: 0.75rem; padding-top: 0.75rem; }
+.submitButton, .cancelButton {
+  border-radius: 0.5rem; padding: 0.625rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.025em; cursor: pointer; transition: background-color 150ms, opacity 150ms;
+}
+.submitButton { flex: 1; border: 0; background: #06b6d4; color: #0b0e14; font-weight: 500; }
+.submitButton:hover { background: #22d3ee; }
+.submitButton:disabled { opacity: 0.5; }
+.cancelButton { border: 1px solid rgb(34 211 238 / 0.3); background: transparent; color: #cbd5e1; }
+.cancelButton:hover { background: rgb(34 211 238 / 0.1); }
+
+.warningOverlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / 0.6); padding: 1rem; backdrop-filter: blur(4px); }
+.warningInner { width: 100%; max-width: 20rem; border: 1px solid rgb(34 211 238 / 0.3); border-radius: 1.5rem; background: #0d121c; box-shadow: 0 25px 50px -12px rgb(8 51 68 / 0.3); padding: 1.5rem; text-align: center; }
+.warningIcon { width: 5rem; height: 5rem; margin: 0 auto 1.25rem; border-radius: 1rem; background: rgb(245 158 11 / 0.1); display: flex; align-items: center; justify-content: center; }
+.warningTriangle { width: 3rem; height: 3rem; color: #fbbf24; stroke-width: 2.5; }
+.warningText { margin: 0 0 1.5rem; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 700; font-size: 1rem; line-height: 1.375; }
+.warningButton { width: 100%; border: 1px solid rgb(239 68 68 / 0.3); border-radius: 0.75rem; background: transparent; padding: 0.75rem; color: #f87171; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 600; cursor: pointer; transition: background-color 150ms; }
+.warningButton:hover { background: rgb(239 68 68 / 0.1); }

@@ -49,6 +49,9 @@ interface AppContextType {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  setWallets: React.Dispatch<React.SetStateAction<Wallet[]>>;
+  setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
+  setBudgets: React.Dispatch<React.SetStateAction<Budget[]>>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -104,7 +107,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AppContext.Provider value={{ wallets, categories, transactions, budgets, loading: initialLoading, error, refetch }}>
+    <AppContext.Provider value={{ wallets, categories, transactions, budgets, loading: initialLoading, error, refetch, setWallets, setCategories, setBudgets }}>
       {children}
     </AppContext.Provider>
   );

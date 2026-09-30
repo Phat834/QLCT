@@ -43,4 +43,17 @@ export class Transaction {
   public getTargetWalletId(): string | undefined { return this.targetWalletId; }
   public getNote(): string | undefined { return this.note; }
   public getCreatedAt(): Date { return this.createdAt; }
+
+  public toJSON() {
+    return {
+      id: this.id,
+      wallet_id: this.walletId,
+      category_id: this.categoryId,
+      target_wallet_id: this.targetWalletId,
+      amount: this.amount,
+      type: this.type,
+      note: this.note,
+      created_at: this.createdAt.toISOString(),
+    };
+  }
 }

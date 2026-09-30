@@ -1,15 +1,30 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import SortableList from '../components/SortableList';
 
 export default function CategoryList() {
-  const { categories, refetch } = useApp();
+  const { categories, refetch, setCategories } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleReorderCategories = useCallback(async (newCategories: typeof categories) => {
+    // Optimistic update: update UI immediately
+    setCategories(newCategories);
+    
+    const items = newCategories.map((cat, index) => ({ id: cat.id, sortOrder: index }));
+    try {
+      await api.reorderCategories(items);
+    } catch (err) {
+      console.error('Reorder failed:', err);
+      // Rollback on error
+      await refetch();
+    }
+  }, [refetch, setCategories]);
 
   const resetForm = () => {
     setName('');
@@ -58,6 +73,38 @@ export default function CategoryList() {
     setError('');
   };
 
+  const renderCategoryCard = (c: any) => (
+    <div
+      key={c.id}
+      className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 p-5 flex items-center justify-between backdrop-blur-md hover:border-cyan-400 transition-colors"
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-400 font-bold">
+          {c.name.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <h3 className="font-semibold text-slate-200 font-mono">{c.name}</h3>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => startEdit(c)}
+          className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
+          title="Sửa"
+        >
+          <Pencil size={16} />
+        </button>
+        <button
+          onClick={() => handleDelete(c.id)}
+          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
+          title="Xoá"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    </div>
+  );
+
   const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#1a1f2b] border-gray-600 text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50';
 
   return (
@@ -72,42 +119,13 @@ export default function CategoryList() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((c) => (
-          <div
-            key={c.id}
-            className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 p-5 flex items-center justify-between backdrop-blur-md hover:border-cyan-400 transition-colors"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 rounded-full flex items-center justify-center text-cyan-400 font-bold">
-                {c.name.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-200 font-mono">{c.name}</h3>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => startEdit(c)}
-                className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
-                title="Sửa"
-              >
-                <Pencil size={16} />
-              </button>
-              <button
-                onClick={() => handleDelete(c.id)}
-                className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
-                title="Xoá"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-        {categories.length === 0 && (
-          <p className="text-slate-400 font-mono text-center py-8 col-span-3">Chưa có danh mục nào</p>
-        )}
-      </div>
+      <SortableList
+        items={categories}
+        getId={(c) => c.id}
+        renderItem={renderCategoryCard}
+        onReorder={handleReorderCategories}
+        emptyMessage="Chưa có danh mục nào"
+      />
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

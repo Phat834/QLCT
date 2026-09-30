@@ -25,6 +25,7 @@ export const api = {
         ...w,
         createdAt: w.createdAt ?? w.created_at,
         walletType: w.walletType ?? w.type,
+        sortOrder: w.sortOrder ?? w.sort_order ?? 0,
       }))
     ),
   getCategories: () =>
@@ -32,6 +33,7 @@ export const api = {
       data.map((c: any) => ({
         ...c,
         createdAt: c.createdAt ?? c.created_at,
+        sortOrder: c.sortOrder ?? c.sort_order ?? 0,
       }))
     ),
   getTransactions: () =>
@@ -53,6 +55,7 @@ export const api = {
         limitAmount: b.limitAmount ?? b.limit_amount,
         dueDate: b.dueDate ?? b.due_date,
         createdAt: b.createdAt ?? b.created_at,
+        sortOrder: b.sortOrder ?? b.sort_order ?? 0,
       }))
     ),
   getBudgetByCategory: (categoryId: string) => fetchJson<any>(`${API_BASE}/budgets/category/${categoryId}`),
@@ -80,4 +83,10 @@ export const api = {
     fetchJson<any>(`${API_BASE}/budgets/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   deleteBudget: (id: string) =>
     fetchJson<any>(`${API_BASE}/budgets/${id}`, { method: 'DELETE' }),
+  reorderBudgets: (items: { id: string; sortOrder: number }[]) =>
+    fetchJson<any>(`${API_BASE}/budgets/reorder`, { method: 'PUT', body: JSON.stringify({ items }) }),
+  reorderCategories: (items: { id: string; sortOrder: number }[]) =>
+    fetchJson<any>(`${API_BASE}/categories/reorder`, { method: 'PUT', body: JSON.stringify({ items }) }),
+  reorderWallets: (items: { id: string; sortOrder: number }[]) =>
+    fetchJson<any>(`${API_BASE}/wallets/reorder`, { method: 'PUT', body: JSON.stringify({ items }) }),
 };

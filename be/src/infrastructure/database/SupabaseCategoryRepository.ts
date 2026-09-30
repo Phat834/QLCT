@@ -10,6 +10,8 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
         id: category.getId(),
         name: category.getName(),
         icon: category.getIcon(),
+        created_at: category.getCreatedAt(),
+        sort_order: category.getSortOrder(),
       });
 
     if (error) {
@@ -26,15 +28,15 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
 
     if (error || !data) return null;
 
-    return new Category(data.id, data.name, data.icon, data.created_at);
+    return new Category(data.id, data.name, data.icon, data.created_at, data.sort_order ?? 0);
   }
 
   async findAll(): Promise<Category[]> {
-    const { data, error } = await supabase.from('categories').select('*').order('id', { ascending: true });
+    const { data, error } = await supabase.from('categories').select('*').order('sort_order', { ascending: true, nullsFirst: false });
 
     if (error || !data) return [];
 
-    return data.map((item) => new Category(item.id, item.name, item.icon, item.created_at));
+    return data.map((item) => new Category(item.id, item.name, item.icon, item.created_at, item.sort_order ?? 0));
   }
 
   async update(category: Category): Promise<void> {
@@ -44,6 +46,7 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
         id: category.getId(),
         name: category.getName(),
         icon: category.getIcon(),
+        sort_order: category.getSortOrder(),
       });
 
     if (error) {
@@ -59,6 +62,17 @@ export class SupabaseCategoryRepository implements ICategoryRepository {
 
     if (error) {
       throw new Error(`Lỗi khi xoá Category: ${error.message}`);
+    }
+  }
+
+  async updateSortOrder(items: { id: string; sortOrder: number }[]): Promise<void> {
+    const updates = items.map(({ id, sortOrder }) =>
+      supabase.from('categories').update({ sort_order: sortOrder }).eq('id', id)
+    );
+    const results = await Promise.all(updates);
+    const errors = results.filter((r) => r.error);
+    if (errors.length > 0) {
+      throw new Error(`Lỗi khi cập nhật thứ tự: ${errors.map((e) => e.error?.message).join(', ')}`);
     }
   }
 }

@@ -13,6 +13,9 @@ import { GetWalletsUseCase } from '../../application/use-cases/GetWalletsUseCase
 import { GetCategoriesUseCase } from '../../application/use-cases/GetCategoriesUseCase.js';
 import { GetBudgetsUseCase } from '../../application/use-cases/GetBudgetsUseCase.js';
 import { GetBudgetByCategoryUseCase } from '../../application/use-cases/GetBudgetByCategoryUseCase.js';
+import { ReorderBudgetsUseCase } from '../../application/use-cases/ReorderBudgetsUseCase.js';
+import { ReorderCategoriesUseCase } from '../../application/use-cases/ReorderCategoriesUseCase.js';
+import { ReorderWalletsUseCase } from '../../application/use-cases/ReorderWalletsUseCase.js';
 import { SupabaseTransactionRepository } from '../../infrastructure/database/SupabaseTransactionRepository.js';
 import { SupabaseWalletRepository } from '../../infrastructure/database/SupabaseWalletRepository.js';
 import { SupabaseCategoryRepository } from '../../infrastructure/database/SupabaseCategoryRepository.js';
@@ -38,13 +41,22 @@ export const createApiRouter = () => {
     new DeleteCategoryUseCase(categoryRepo),
     new CreateBudgetUseCase(budgetRepo),
     new UpdateBudgetUseCase(budgetRepo),
-    new DeleteBudgetUseCase(budgetRepo)
+    new DeleteBudgetUseCase(budgetRepo),
+    new ReorderBudgetsUseCase(budgetRepo),
+    new ReorderCategoriesUseCase(categoryRepo),
+    new ReorderWalletsUseCase(walletRepo)
   );
 
   const walletController = new WalletController();
 
   router.use('/transactions', createTransactionRouter());
   router.get('/transactions/all', (req, res) => apiController.getTransactions(req, res));
+  
+  // Reorder endpoints (must come BEFORE /:id routes)
+  router.put('/wallets/reorder', (req, res) => apiController.reorderWallets(req, res));
+  router.put('/categories/reorder', (req, res) => apiController.reorderCategories(req, res));
+  router.put('/budgets/reorder', (req, res) => apiController.reorderBudgets(req, res));
+
   router.get('/wallets', (req, res) => apiController.getWallets(req, res));
   router.post('/wallets', (req, res) => walletController.createWallet(req, res));
   router.put('/wallets/:id', (req, res) => walletController.updateWallet(req, res));
