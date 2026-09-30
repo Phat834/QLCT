@@ -15,6 +15,12 @@ import type { TransactionFilterValues, TransactionGroup } from '../utils/transac
 const daysPerPage = 7;
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
+function isTodayOrPast(date: Date): boolean {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  return date <= today;
+}
+
 export type TransactionPaginationResult = {
   calendarGroups: TransactionGroup[];
   pagedGroups: TransactionGroup[];
@@ -65,16 +71,20 @@ export function useTransactionPagination(
   );
   const totalPages = Math.ceil(totalDays / daysPerPage);
   const safeCurrentPage = Math.min(currentPage, Math.max(0, totalPages - 1));
-  const calendarGroups = useMemo(() => Array.from({ length: totalDays }, (_, index) => {
-    const date = new Date(firstPageDate);
-    date.setDate(date.getDate() + index);
-    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    return {
-      date,
-      dateKey,
-      items: transactionsByDate.get(dateKey) || [],
-    };
-  }), [firstPageDate, totalDays, transactionsByDate]);
+  const calendarGroups = useMemo(() => {
+    const allGroups = Array.from({ length: totalDays }, (_, index) => {
+      const date = new Date(firstPageDate);
+      date.setDate(date.getDate() + index);
+      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      return {
+        date,
+        dateKey,
+        items: transactionsByDate.get(dateKey) || [],
+      };
+    });
+    // Filter out future dates (only show up to today)
+    return allGroups.filter((group) => isTodayOrPast(group.date));
+  }, [firstPageDate, totalDays, transactionsByDate]);
   const pagedGroups = useMemo(
     () => calendarGroups.slice(safeCurrentPage * daysPerPage, (safeCurrentPage + 1) * daysPerPage),
     [calendarGroups, safeCurrentPage]
