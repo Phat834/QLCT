@@ -6,4 +6,5 @@ export interface IWalletRepository {
   update(wallet: Wallet): Promise<void>;
   delete(id: string): Promise<void>;
   findAll(): Promise<Wallet[]>;
+  updateSortOrder(items: { id: string; sortOrder: number }[]): Promise<void>;
 }

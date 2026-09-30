@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import type { Budget } from '../contexts/AppContext';
+import { useCallback } from 'react';
 import styles from './BudgetList/BudgetList.module.css';
 import BudgetCard from './BudgetList/components/BudgetCard';
 import BudgetModal from './BudgetList/components/BudgetModal';
@@ -9,9 +10,11 @@ import WarningModal from './BudgetList/components/WarningModal';
 import { useBudgetAutoReset } from './BudgetList/hooks/useBudgetAutoReset';
 import { useBudgetForm } from './BudgetList/hooks/useBudgetForm';
 import type { BudgetCardData } from './BudgetList/utils/budgetUtils';
+import SortableList from '../components/SortableList';
+import { api } from '../services/api';
 
 export default function BudgetList() {
-  const { budgets, categories, transactions, wallets, refetch } = useApp();
+  const { budgets, categories, transactions, wallets, refetch, setBudgets } = useApp();
 
   const {
     categories: formCategories,
@@ -37,6 +40,20 @@ export default function BudgetList() {
     wallets,
     refetch,
   });
+
+  const handleReorderBudgets = useCallback(async (newBudgets: Budget[]) => {
+    // Optimistic update: update UI immediately
+    setBudgets(newBudgets);
+    
+    const items = newBudgets.map((budget, index) => ({ id: budget.id, sortOrder: index }));
+    try {
+      await api.reorderBudgets(items);
+    } catch (err) {
+      console.error('Reorder failed:', err);
+      // Rollback on error
+      await refetch();
+    }
+  }, [refetch, setBudgets]);
 
   const totalBalance = wallets.reduce((sum: number, wallet: { balance: number }) => sum + wallet.balance, 0);
 
@@ -83,6 +100,22 @@ export default function BudgetList() {
     };
   };
 
+  const renderBudgetCard = (budget: Budget) => {
+    const data = buildCardData(budget);
+    return (
+      <BudgetCard
+        key={budget.id}
+        data={data}
+        onReset={(id: string, spent: number) => {
+          localStorage.setItem('budgetReset_' + id, String(spent));
+          window.location.reload();
+        }}
+        onEdit={startEdit}
+        onDelete={handleDelete}
+      />
+    );
+  };
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -94,24 +127,13 @@ export default function BudgetList() {
 
       <BudgetSummary totalBalance={totalBalance} />
 
-      <div className={styles.cardList}>
-        {budgets.map((budget: Budget) => {
-          const data = buildCardData(budget);
-          return (
-            <BudgetCard
-              key={budget.id}
-              data={data}
-              onReset={(id: string, spent: number) => {
-                localStorage.setItem('budgetReset_' + id, String(spent));
-                window.location.reload();
-              }}
-              onEdit={startEdit}
-              onDelete={handleDelete}
-            />
-          );
-        })}
-        {budgets.length === 0 && <p className={styles.emptyState}>Chưa có ngân sách nào</p>}
-      </div>
+      <SortableList
+        items={budgets}
+        getId={(budget) => budget.id}
+        renderItem={renderBudgetCard}
+        onReorder={handleReorderBudgets}
+        emptyMessage="Chưa có ngân sách nào"
+      />
 
       {showModal && (
         <BudgetModal

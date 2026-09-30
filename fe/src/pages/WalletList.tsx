@@ -1,16 +1,17 @@
 // Trang quản lý ví: hiển thị danh sách ví, cho phép thêm / sửa / xoá ví.
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
 
 import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X, Wallet } from 'lucide-react';
+import SortableList from '../components/SortableList';
 
 type WalletType = 'AVAILABLE' | 'SAVINGS';
 
 export default function WalletList() {
-  const { wallets, refetch } = useApp();
+  const { wallets, refetch, setWallets } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -18,6 +19,20 @@ export default function WalletList() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState<WalletType>('AVAILABLE');
+
+  const handleReorderWallets = useCallback(async (newWallets: typeof wallets) => {
+    // Optimistic update: update UI immediately
+    setWallets(newWallets);
+    
+    const items = newWallets.map((wallet, index) => ({ id: wallet.id, sortOrder: index }));
+    try {
+      await api.reorderWallets(items);
+    } catch (err) {
+      console.error('Reorder failed:', err);
+      // Rollback on error
+      await refetch();
+    }
+  }, [refetch, setWallets]);
 
   const resetForm = () => {
     setName('');
@@ -37,7 +52,6 @@ export default function WalletList() {
       } else {
         const id = 'w_' + Math.random().toString(36).slice(2, 10);
         await api.createWallet({ id, name, balance: parseCurrency(balance), type });
-        await api.createWallet({ id, name, balance: parseCurrency(balance), type });
       }
       resetForm();
       setShowModal(false);
@@ -53,7 +67,6 @@ export default function WalletList() {
     if (!confirm('Bạn có chắc muốn xoá ví này?')) return;
     setLoading(true);
     try {
-      await api.deleteWallet(id);
       await api.deleteWallet(id);
       await refetch();
     } catch (err: any) {
@@ -72,6 +85,48 @@ export default function WalletList() {
     setError('');
   };
 
+  const renderWalletCard = (w: any) => (
+    <div
+      key={w.id}
+      className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 p-5 flex justify-between items-start backdrop-blur-md hover:border-cyan-400 transition-colors"
+    >
+      <div>
+        <h3 className="font-semibold text-slate-200 text-lg flex items-center gap-2 font-mono">
+          <Wallet size={16} className="text-cyan-400" />
+          {w.name}
+          <span
+            className={`text-xs px-2 py-0.5 rounded font-mono ${
+              w.type === 'SAVINGS'
+                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
+                : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
+            }`}
+          >
+            {w.type === 'SAVINGS' ? 'Tiết kiệm' : 'Khả dụng'}
+          </span>
+        </h3>
+        <p className="text-2xl font-bold text-slate-200 mt-2 font-mono">
+          {w.balance.toLocaleString('vi-VN')} VNĐ
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => startEdit(w)}
+          className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
+          title="Sửa"
+        >
+          <Pencil size={16} />
+        </button>
+        <button
+          onClick={() => handleDelete(w.id)}
+          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
+          title="Xoá"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    </div>
+  );
+
   const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#1a1f2b] border-gray-600 text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50';
 
   return (
@@ -86,52 +141,13 @@ export default function WalletList() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {wallets.map((w) => (
-          <div
-            key={w.id}
-            className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 p-5 flex justify-between items-start backdrop-blur-md hover:border-cyan-400 transition-colors"
-          >
-            <div>
-              <h3 className="font-semibold text-slate-200 text-lg flex items-center gap-2 font-mono">
-                <Wallet size={16} className="text-cyan-400" />
-                {w.name}
-                <span
-                  className={`text-xs px-2 py-0.5 rounded font-mono ${
-                    w.type === 'SAVINGS'
-                      ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
-                      : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
-                  }`}
-                >
-                  {w.type === 'SAVINGS' ? 'Tiết kiệm' : 'Khả dụng'}
-                </span>
-              </h3>
-              <p className="text-2xl font-bold text-slate-200 mt-2 font-mono">
-                {w.balance.toLocaleString('vi-VN')} VNĐ
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => startEdit(w)}
-                className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
-                title="Sửa"
-              >
-                <Pencil size={16} />
-              </button>
-              <button
-                onClick={() => handleDelete(w.id)}
-                className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
-                title="Xoá"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-        {wallets.length === 0 && (
-          <p className="text-slate-400 font-mono text-center py-8 col-span-3">Chưa có ví nào</p>
-        )}
-      </div>
+      <SortableList
+        items={wallets}
+        getId={(w) => w.id}
+        renderItem={renderWalletCard}
+        onReorder={handleReorderWallets}
+        emptyMessage="Chưa có ví nào"
+      />
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

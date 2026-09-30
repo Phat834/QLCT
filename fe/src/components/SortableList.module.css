@@ -1,0 +1,85 @@
+.sortableList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 1rem;
+}
+
+.sortableItem {
+  border: 1px solid rgb(34 211 238 / 0.2);
+  border-radius: 0.75rem;
+  background: rgb(13 18 28 / 0.8);
+  backdrop-filter: blur(8px);
+  transition: box-shadow 150ms, border-color 150ms;
+}
+
+.sortableItem:hover {
+  border-color: rgb(34 211 238 / 0.4);
+  box-shadow: 0 4px 12px rgb(8 51 68 / 0.2);
+}
+
+.dragHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 100%;
+  min-height: 3rem;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: grab;
+  padding: 0.5rem;
+  transition: color 150ms, background-color 150ms;
+  flex-shrink: 0;
+}
+
+.dragHandle:hover {
+  color: #22d3ee;
+  background: rgb(34 211 238 / 0.1);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.itemContent {
+  flex: 1;
+  min-width: 0;
+  padding: 1rem 1.25rem;
+}
+
+.sortableItem[data-dragging] {
+  box-shadow: 0 12px 24px rgb(8 51 68 / 0.3);
+  border-color: #22d3ee;
+}
+
+/* Prevent document scroll during drag */
+html.dragging,
+body.dragging {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.emptyState {
+  padding: 2rem;
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  text-align: center;
+  border: 1px dashed rgb(34 211 238 / 0.2);
+  border-radius: 1rem;
+  background: rgb(13 18 28 / 0.5);
+}
+
+@media (max-width: 640px) {
+  .dragHandle {
+    width: 2rem;
+  }
+  
+  .sortableList {
+    max-height: calc(100vh - 180px);
+  }
+}

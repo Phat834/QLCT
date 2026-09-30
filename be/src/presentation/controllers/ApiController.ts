@@ -11,6 +11,9 @@ import { GetBudgetsUseCase } from '../../application/use-cases/GetBudgetsUseCase
 import { GetCategoriesUseCase } from '../../application/use-cases/GetCategoriesUseCase.js';
 import { GetTransactionsUseCase } from '../../application/use-cases/GetTransactionsUseCase.js';
 import { GetWalletsUseCase } from '../../application/use-cases/GetWalletsUseCase.js';
+import { ReorderBudgetsUseCase } from '../../application/use-cases/ReorderBudgetsUseCase.js';
+import { ReorderCategoriesUseCase } from '../../application/use-cases/ReorderCategoriesUseCase.js';
+import { ReorderWalletsUseCase } from '../../application/use-cases/ReorderWalletsUseCase.js';
 
 export class ApiController {
   constructor(
@@ -24,7 +27,10 @@ export class ApiController {
     private deleteCategoryUseCase: DeleteCategoryUseCase,
     private createBudgetUseCase: CreateBudgetUseCase,
     private updateBudgetUseCase: UpdateBudgetUseCase,
-    private deleteBudgetUseCase: DeleteBudgetUseCase
+    private deleteBudgetUseCase: DeleteBudgetUseCase,
+    private reorderBudgetsUseCase: ReorderBudgetsUseCase,
+    private reorderCategoriesUseCase: ReorderCategoriesUseCase,
+    private reorderWalletsUseCase: ReorderWalletsUseCase
   ) {}
 
   async getTransactions(_req: Request, res: Response): Promise<void> {
@@ -142,5 +148,47 @@ export class ApiController {
 
     const budget = await this.getBudgetByCategoryUseCase.execute({ categoryId });
     res.json(budget);
+  }
+
+  async reorderBudgets(req: Request, res: Response): Promise<void> {
+    try {
+      const { items } = req.body;
+      if (!Array.isArray(items) || items.length === 0) {
+        res.status(400).json({ error: 'Danh sách items không hợp lệ!' });
+        return;
+      }
+      await this.reorderBudgetsUseCase.execute(items);
+      res.status(200).json({ message: 'Cập nhật thứ tự thành công!' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async reorderCategories(req: Request, res: Response): Promise<void> {
+    try {
+      const { items } = req.body;
+      if (!Array.isArray(items) || items.length === 0) {
+        res.status(400).json({ error: 'Danh sách items không hợp lệ!' });
+        return;
+      }
+      await this.reorderCategoriesUseCase.execute(items);
+      res.status(200).json({ message: 'Cập nhật thứ tự thành công!' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async reorderWallets(req: Request, res: Response): Promise<void> {
+    try {
+      const { items } = req.body;
+      if (!Array.isArray(items) || items.length === 0) {
+        res.status(400).json({ error: 'Danh sách items không hợp lệ!' });
+        return;
+      }
+      await this.reorderWalletsUseCase.execute(items);
+      res.status(200).json({ message: 'Cập nhật thứ tự thành công!' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   }
 }
