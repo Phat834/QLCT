@@ -1,406 +1,133 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Plus } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { api } from '../services/api';
-
-import CurrencyInput from '../components/CurrencyInput';
-import { parseCurrency, formatCurrency } from '../utils/currency';
-import { Plus, Pencil, Trash2, X, Wallet, AlertTriangle, Calendar } from 'lucide-react';
+import type { Budget } from '../contexts/AppContext';
+import styles from './BudgetList/BudgetList.module.css';
+import BudgetCard from './BudgetList/components/BudgetCard';
+import BudgetModal from './BudgetList/components/BudgetModal';
+import BudgetSummary from './BudgetList/components/BudgetSummary';
+import WarningModal from './BudgetList/components/WarningModal';
+import { useBudgetAutoReset } from './BudgetList/hooks/useBudgetAutoReset';
+import { useBudgetForm } from './BudgetList/hooks/useBudgetForm';
+import type { BudgetCardData } from './BudgetList/utils/budgetUtils';
 
 export default function BudgetList() {
   const { budgets, categories, transactions, wallets, refetch } = useApp();
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [categoryId, setCategoryId] = useState('');
-  const [walletIds, setWalletIds] = useState<string[]>([]);
-  const [limitAmount, setLimitAmount] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showWarning, setShowWarning] = useState(false);
-  const [, forceRefresh] = useState(0);
 
-  const STORAGE_KEY = 'budgetReset_';
+  const {
+    categories: formCategories,
+    showModal,
+    showWarning,
+    editingId,
+    form,
+    error,
+    loading,
+    openAdd,
+    closeModal,
+    closeWarning,
+    updateForm,
+    handleSubmit,
+    handleDelete,
+    startEdit,
+  } = useBudgetForm({ categories, wallets, refetch });
 
-  const getResetBaseline = (budgetId: string): number => {
-    const stored = localStorage.getItem(STORAGE_KEY + budgetId);
-    return stored ? Number(stored) : 0;
-  };
+  useBudgetAutoReset({
+    budgets,
+    categories,
+    transactions,
+    wallets,
+    refetch,
+  });
 
-  const resetBudget = (budgetId: string, currentSpent: number) => {
-    localStorage.setItem(STORAGE_KEY + budgetId, String(currentSpent));
-    forceRefresh((n) => n + 1);
-  };
+  const totalBalance = wallets.reduce((sum: number, wallet: { balance: number }) => sum + wallet.balance, 0);
 
-  const getActualSpent = useCallback((catId: string, walletIds?: string[]) => {
-    const ids = walletIds || [];
-    const isSavings = categories.find(c => c.id === catId)?.name.toLowerCase().includes('tiết kiệm');
-
+  const buildCardData = (budget: Budget): BudgetCardData => {
+    const category = categories.find((item: { id: string; name: string }) => item.id === budget.categoryId);
+    const walletIds = budget.walletIds || [];
+    const budgetWallets = wallets.filter((wallet: { id: string }) => walletIds.includes(wallet.id));
+    const rawSpent = transactions
+      .filter((tx: { type: string; categoryId?: string; walletId: string; amount: number }) => tx.type === 'EXPENSE'
+        && tx.categoryId === budget.categoryId
+        && (walletIds.length > 0 ? walletIds.includes(tx.walletId) : true))
+      .reduce((sum: number, tx: { amount: number }) => sum + tx.amount, 0);
+    const isSavings = category?.name.toLowerCase().includes('tiết kiệm');
+    let spent: number;
     if (isSavings) {
-      return wallets
-        .filter((w) => ids.includes(w.id))
-        .reduce((sum, w) => sum + w.balance, 0);
+      spent = wallets
+        .filter((wallet: { id: string }) => walletIds.includes(wallet.id))
+        .reduce((sum: number, wallet: { balance: number }) => sum + wallet.balance, 0);
+    } else {
+      const baseline = localStorage.getItem('budgetReset_' + budget.id) ? Number(localStorage.getItem('budgetReset_' + budget.id)) : 0;
+      spent = Math.max(0, rawSpent - baseline);
+    }
+    const pct = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0;
+
+    let dueStatus: 'normal' | 'warning' | 'danger' = 'normal';
+    if (budget.dueDate) {
+      const [year, month, day] = budget.dueDate.split('T')[0].split('-').map(Number);
+      const dueDate = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+      if (daysUntilDue <= 0) dueStatus = 'danger';
+      else if (daysUntilDue <= 6) dueStatus = 'warning';
     }
 
-    return transactions
-      .filter(t => t.type === 'EXPENSE' && t.categoryId === catId && (ids.length > 0 ? ids.includes(t.walletId) : true))
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [categories, transactions, wallets]);
-
-  const parseDueDate = (due?: string | null): Date | null => {
-    if (!due) return null;
-    const datePart = due.split('T')[0];
-    const parts = datePart.split('-').map(Number);
-    if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
-    return new Date(parts[0], parts[1] - 1, parts[2]);
+    return {
+      budget,
+      categoryName: category?.name || budget.categoryId,
+      budgetWallets,
+      spent,
+      limitAmount: budget.limitAmount,
+      pct,
+      dueStatus,
+    };
   };
-
-  const isDueDatePassed = (due?: string | null) => {
-    const d = parseDueDate(due);
-    if (!d) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return d.getTime() <= today.getTime();
-  };
-
-  const getDueDateStatus = (due?: string | null) => {
-    const d = parseDueDate(due);
-    if (!d) return 'normal';
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const daysUntilDue = Math.ceil((d.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-    if (daysUntilDue <= 0) return 'danger';
-    if (daysUntilDue <= 6) return 'warning';
-    return 'normal';
-  };
-
-  const formatDueDate = (due?: string | null) => {
-    const d = parseDueDate(due);
-    return d ? d.toLocaleDateString('vi-VN') : '';
-  };
-
-  const resetForm = () => { 
-    setCategoryId(''); 
-    setWalletIds([]); 
-    setLimitAmount(''); 
-    setDueDate(''); 
-    setEditingId(null); 
-    setError(''); 
-  };
-
-  const handleAddClick = () => {
-    if (wallets.length === 0) return setShowWarning(true);
-    resetForm();
-    setShowModal(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    const body = editingId
-      ? { categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null }
-      : { id: 'budget_' + Math.random().toString(36).slice(2, 10), categoryId, walletIds, limitAmount: parseCurrency(limitAmount), dueDate: dueDate || null };
-
-    try {
-      if (editingId) {
-        await api.updateBudget(editingId, body);
-      } else {
-        await api.createBudget(body);
-      }
-      resetForm();
-      setShowModal(false);
-      await refetch();
-    } catch (err: any) { 
-      setError(err.message); 
-    } finally { 
-      setLoading(false); 
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xoá?')) return;
-    try {
-      await api.deleteBudget(id);
-      await refetch();
-    } catch (err: any) { 
-      setError(err.message); 
-    }
-  };
-
-  const startEdit = (b: any) => {
-    setEditingId(b.id);
-    setCategoryId(b.categoryId);
-    setWalletIds(b.walletIds || []);
-    setLimitAmount(formatCurrency(String(b.limitAmount)));
-    setDueDate(b.dueDate ? b.dueDate.split('T')[0] : '');
-    setError('');
-    setShowModal(true);
-  };
-
-  const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#1a1f2b] border-gray-600 text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50';
-
-  const addMonth = (date: Date): Date => {
-    const d = new Date(date);
-    d.setMonth(d.getMonth() + 1);
-    return d;
-  };
-
-  const formatDueDateForApi = (date: Date): string => {
-    return date.toISOString().split('T')[0];
-  };
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      for (const b of budgets) {
-        const rawSpent = getActualSpent(b.categoryId, (b as any).walletIds || []);
-        const baseline = getResetBaseline(b.id);
-        const spent = Math.max(0, rawSpent - baseline);
-        const pct = b.limitAmount > 0 ? (spent / b.limitAmount) * 100 : 0;
-        const due = isDueDatePassed(b.dueDate);
-
-        if (pct >= 100 && due && b.dueDate) {
-          const currentDue = parseDueDate(b.dueDate);
-          if (currentDue) {
-            const nextDue = addMonth(currentDue);
-            resetBudget(b.id, rawSpent);
-            try {
-              await api.updateBudget(b.id, {
-                categoryId: b.categoryId,
-                walletIds: b.walletIds || [],
-                limitAmount: b.limitAmount,
-                dueDate: formatDueDateForApi(nextDue),
-              });
-              if (!mounted) return;
-              await refetch();
-            } catch (err) {
-              console.error('Auto reset budget failed:', err);
-            }
-          }
-        }
-      }
-    })();
-    return () => { mounted = false; };
-  }, [budgets, categories, transactions, wallets, refetch, getActualSpent]);
 
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-slate-200 font-sans">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-200 font-mono tracking-wide">Ngân sách</h2>
-        <button
-          onClick={handleAddClick}
-          className="bg-cyan-500 hover:bg-cyan-400 text-[#0b0e14] font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
-        >
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <h2 className={styles.title}>Ngân sách</h2>
+        <button type="button" onClick={openAdd} className={styles.addButton}>
           <Plus size={16} /> Thêm
         </button>
-      </div>
+      </header>
 
-      {/* Thẻ thống kê số dư */}
-      <div className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 overflow-hidden backdrop-blur-md mb-8 p-5">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400"><Wallet size={24} /></div>
-          <div>
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider block font-mono">Tổng số dư</span>
-            <p className="text-xl font-bold text-slate-200 mt-0.5 font-mono">
-              {wallets.reduce((s, w) => s + w.balance, 0).toLocaleString('vi-VN')} VNĐ
-            </p>
-          </div>
-        </div>
-      </div>
+      <BudgetSummary totalBalance={totalBalance} />
 
-      {/* Danh sách Ngân Sách */}
-      <div className="space-y-4">
-        {budgets.map((b) => {
-          const cat = categories.find((c) => c.id === b.categoryId);
-          const budgetWallets = wallets.filter((w) => (b as any).walletIds?.includes(w.id));
-          const rawSpent = getActualSpent(b.categoryId, (b as any).walletIds || []);
-          const baseline = getResetBaseline(b.id);
-          const spent = Math.max(0, rawSpent - baseline);
-          const pct = b.limitAmount > 0 ? (spent / b.limitAmount) * 100 : 0;
-
-          const progressColor = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-emerald-500';
-          const badgeBg = pct >= 100 ? 'bg-red-500/10 text-red-400 border border-red-500/30' : pct >= 80 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
-
-          const dueStatus = getDueDateStatus(b.dueDate);
-          const dueBadgeBg = dueStatus === 'danger'
-            ? 'bg-red-500/10 text-red-400 border border-red-500/30'
-            : dueStatus === 'warning'
-              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-              : 'bg-sky-500/10 text-sky-400 border border-sky-500/30';
-          const dueLabel = dueStatus === 'danger'
-            ? 'Đến hạn trả:'
-            : dueStatus === 'warning'
-              ? 'Sắp đến hạn trả:'
-              : 'Hẹn trả:';
-
+      <div className={styles.cardList}>
+        {budgets.map((budget: Budget) => {
+          const data = buildCardData(budget);
           return (
-            <div key={b.id} className="border border-cyan-500/30 bg-[#0d121c]/90 rounded-2xl shadow-xl shadow-cyan-950/20 p-5 hover:border-cyan-400 transition-colors backdrop-blur-md">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h3 className="font-bold text-lg text-slate-200 font-mono">{cat?.name || b.categoryId}</h3>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-950/60 text-indigo-400 border border-indigo-800">
-                    <Wallet size={12} /> {budgetWallets.length > 0 ? budgetWallets.map((w) => w.name).join(', ') : 'Chưa chọn ví'}
-                  </span>
-                  {b.dueDate && (
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${dueBadgeBg}`}>
-                      <Calendar size={12} /> {dueLabel} {formatDueDate(b.dueDate)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {pct >= 100 && (
-                    <button
-                      onClick={() => resetBudget(b.id, spent)}
-                      className="px-4 py-2 text-sm text-white bg-amber-500 hover:bg-amber-400 rounded-lg font-mono transition flex items-center gap-2"
-                      title="Reset về 0"
-                    >
-                      Reset
-                    </button>
-                  )}
-                  <button
-                    onClick={() => startEdit(b)}
-                    className="border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
-                    title="Sửa"
-                  >
-                    <Pencil size={16} /> Sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(b.id)}
-                    className="border border-red-500/40 text-red-400 hover:bg-red-500/10 font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
-                    title="Xoá"
-                  >
-                    <Trash2 size={16} /> Xoá
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-baseline justify-between mb-2">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-bold text-slate-200 font-mono">
-                    {spent.toLocaleString('vi-VN')}
-                  </span>
-                  <span className="text-sm font-medium text-slate-400">
-                    / {b.limitAmount.toLocaleString('vi-VN')} VNĐ
-                  </span>
-                </div>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${badgeBg}`}>
-                  {pct.toFixed(1)}%
-                </span>
-              </div>
-
-              <div className="w-full bg-[#1a1f2b] rounded-full h-2.5 overflow-hidden p-0.5">
-                <div
-                  className={`${progressColor} h-full rounded-full transition-all duration-300`}
-                  style={{ width: `${Math.min(pct, 100)}%` }}
-                />
-              </div>
-            </div>
+            <BudgetCard
+              key={budget.id}
+              data={data}
+              onReset={(id: string, spent: number) => {
+                localStorage.setItem('budgetReset_' + id, String(spent));
+                window.location.reload();
+              }}
+              onEdit={startEdit}
+              onDelete={handleDelete}
+            />
           );
         })}
-        {budgets.length === 0 && (
-          <p className="text-slate-400 font-mono text-center py-8">Chưa có ngân sách nào</p>
-        )}
+        {budgets.length === 0 && <p className={styles.emptyState}>Chưa có ngân sách nào</p>}
       </div>
 
-      {/* POP-UP MODAL FORM */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#0d121c] border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-cyan-950/30">
-            <div className="flex justify-between items-center mb-5 border-b border-cyan-500/20 pb-3">
-              <h3 className="text-xl font-bold text-cyan-300 font-mono uppercase tracking-widest">
-                {editingId ? 'Cập nhật ngân sách' : 'Thêm ngân sách mới'}
-              </h3>
-              <button
-                onClick={() => { setShowModal(false); resetForm(); }}
-                className="text-slate-400 hover:text-slate-200"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Danh mục</label>
-                <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required className={inputClass}>
-                  <option value="">Chọn...</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Chọn ví</label>
-                <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-600 rounded-lg p-2 bg-[#1a1f2b]">
-                  {wallets.map((w) => (
-                    <label key={w.id} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={walletIds.includes(w.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setWalletIds([...walletIds, w.id]);
-                          } else {
-                            setWalletIds(walletIds.filter((id) => id !== w.id));
-                          }
-                        }}
-                        className="rounded border-gray-500 text-cyan-500 focus:ring-cyan-500"
-                      />
-                      <span className="text-slate-200 text-sm">{w.name}</span>
-                    </label>
-                  ))}
-                  {wallets.length === 0 && (
-                    <p className="text-slate-500 text-xs">Chưa có ví nào</p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Hạn mức (VNĐ)</label>
-                <CurrencyInput value={limitAmount} onChange={setLimitAmount} required min={1} className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-slate-300">Ngày hẹn trả (tuỳ chọn)</label>
-                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputClass} />
-              </div>
-              {error && <p className="text-red-400 text-sm font-mono">{error}</p>}
-              <div className="flex gap-3 pt-3">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-[#0b0e14] font-medium py-2.5 rounded-lg transition disabled:opacity-50 font-mono tracking-wide"
-                >
-                  {loading ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Lưu'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowModal(false); resetForm(); }}
-                  className="px-4 py-2.5 border border-cyan-500/30 rounded-lg text-slate-300 font-mono hover:bg-cyan-950/30 transition"
-                >
-                  Hủy
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <BudgetModal
+          form={form}
+          categories={formCategories}
+          wallets={wallets}
+          loading={loading}
+          error={error}
+          isEditing={!!editingId}
+          onUpdate={updateForm}
+          onClose={closeModal}
+          onSubmit={handleSubmit}
+        />
       )}
 
-      {/* POP-UP MODAL CẢNH BÁO */}
-      {showWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#0d121c] border border-cyan-500/30 rounded-3xl p-6 max-w-xs w-full shadow-2xl text-center flex flex-col items-center">
-            <div className="w-20 h-20 mb-5 bg-amber-500/10 rounded-2xl flex items-center justify-center">
-              <AlertTriangle className="w-12 h-12 text-amber-400 stroke-[2.5]" />
-            </div>
-            <p className="text-slate-200 font-bold text-base mb-6 leading-snug font-mono">
-              Không thể hoàn tất thao tác. Bạn cần tạo ít nhất 1 ví trước!
-            </p>
-            <button
-              onClick={() => setShowWarning(false)}
-              className="w-full text-red-400 font-semibold py-3 rounded-xl border border-red-500/30 hover:bg-red-500/10 transition font-mono"
-            >
-              Đóng
-            </button>
-          </div>
-        </div>
-      )}
+      <WarningModal open={showWarning} onClose={closeWarning} />
     </div>
   );
 }
