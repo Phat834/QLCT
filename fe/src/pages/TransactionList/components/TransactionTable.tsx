@@ -62,6 +62,7 @@ export default function TransactionTable({
           <tbody className={styles.body}>
             {groups.map((group) => {
               const expenseTotal = expenseByDate[group.dateKey] || 0;
+              const hasItems = group.items.length > 0;
 
               return (
                 <Fragment key={group.dateKey}>
@@ -72,21 +73,29 @@ export default function TransactionTable({
                       <div className={styles.dateLineBottom} />
                     </td>
                   </tr>
-                  {group.items.map((tx, txIndex) => (
-                    <TransactionRow
-                      key={tx.id}
-                      tx={tx}
-                      isLastInGroup={txIndex === group.items.length - 1}
-                      expenseTotal={expenseTotal}
-                      categoryName={tx.type === 'INCOME'
-                        ? 'Tiền vào'
-                        : tx.type === 'TRANSFER'
-                          ? 'Chuyển ví nội bộ'
-                          : getCategoryName(tx.categoryId)}
-                      walletName={getWalletName(tx.walletId)}
-                      onOpenDetail={onOpenDetail}
-                    />
-                  ))}
+                  {hasItems ? (
+                    group.items.map((tx, txIndex) => (
+                      <TransactionRow
+                        key={tx.id}
+                        tx={tx}
+                        isLastInGroup={txIndex === group.items.length - 1}
+                        expenseTotal={expenseTotal}
+                        categoryName={tx.type === 'INCOME'
+                          ? 'Tiền vào'
+                          : tx.type === 'TRANSFER'
+                            ? 'Chuyển ví nội bộ'
+                            : getCategoryName(tx.categoryId)}
+                        walletName={getWalletName(tx.walletId)}
+                        onOpenDetail={onOpenDetail}
+                      />
+                    ))
+                  ) : (
+                    <tr className={styles.emptyDayRow}>
+                      <td colSpan={6} className={styles.emptyDayCell}>
+                        Không có giao dịch nào được thực hiện trong ngày
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td colSpan={6} className={styles.balanceRow}>
                       Số dư khả dụng cuối ngày:{' '}

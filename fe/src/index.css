@@ -1,6 +1,110 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   1. Root layer
+
+   The white strip down the right edge came from two things combined:
+     - `scrollbar-gutter: stable` sat on <html>, which is `overflow: hidden`
+       and therefore never scrolls. It still reserved a permanent ~15px strip,
+       and that strip was painted with the browser's default white canvas.
+     - <html>/<body> had no background of their own, so the canvas showed
+       through anywhere a container was transparent.
+
+   Fix: give the document a real dark background, tell the browser we are in a
+   dark colour scheme so native UI renders dark, and move the gutter onto
+   <main> - the element that actually scrolls.
+--------------------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+
+  /* Referenced by Dashboard (`bg-[var(--bg-page)]`) and TransactionList /
+     BudgetList (`background: var(--bg-card-overlay)`) but never defined
+     anywhere, which left those pages transparent. Pinned to the app's own
+     dark surfaces so they can never fall back to the white canvas. */
+  --bg-page: #0b0e14;
+  --bg-card-overlay: rgb(13 18 28 / 0.9);
+}
+
+html,
 body {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
   margin: 0;
+  padding: 0;
+  /* Matches the app shell (Layout.tsx) so no white can ever show through. */
+  background-color: #0b0e14;
+  color: #e2e8f0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  /* `scrollbar-gutter` deliberately NOT set here: <html> no longer scrolls, so
+     the gutter would only reserve an empty white strip. It lives on <main>. */
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  background-color: #0b0e14;
+  overflow: hidden;
+}
+
+body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   2. Custom scrollbars
+
+   Firefox honours `scrollbar-width` / `scrollbar-color`; Chromium and WebKit
+   honour the ::-webkit-scrollbar pseudo-elements.
+--------------------------------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(34 211 238 / 0.28) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgb(34 211 238 / 0.22);
+  border-radius: 9999px;
+  /* Keeps the thumb off the container edges so it never reads as a gap. */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(34 211 238 / 0.42);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: rgb(34 211 238 / 0.6);
+}
+
+/* The bottom-right corner where a horizontal and vertical scrollbar meet is
+   transparent by default and would flash white. */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   3. Drag state
+
+   Applied to <html> by SortableList for the duration of a drag only, so the
+   page cannot scroll underneath the list. Removed on drop.
+--------------------------------------------------------------------------- */
+html.dragging-active,
+html.dragging-active body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
 }

@@ -1,14 +1,46 @@
+/* The single scrollable region for card lists.
+   Flexes into whatever space the page leaves, capped so the page itself never
+   overflows, and fenced on both axes. `scrollbar-gutter: stable` keeps its
+   width constant so nothing shifts sideways mid-drag; the explicit background
+   ensures the reserved gutter is dark rather than showing through to the page. */
 .sortableList {
+  position: relative;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 0.5rem;
+  min-height: 0;
+  max-width: 100%;
   max-height: calc(100vh - 200px);
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  /* Matches the page so the gutter strip reads as part of the surface. */
+  background-color: #0b0e14;
   padding-bottom: 1rem;
 }
 
+/* Wrapper that dnd-kit transforms. Must never contribute unbounded scrollable
+   overflow, so it is not allowed to grow or scroll on its own. */
+.sortableItemWrap {
+  position: relative;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+/* Placeholder left behind while the card is being dragged. */
+.sortableItemWrap[data-dragging] {
+  opacity: 0.4;
+}
+
+.sortableItemWrap[data-dragging] .sortableItem {
+  border-style: dashed;
+}
+
 .sortableItem {
+  display: flex;
+  align-items: stretch;
   border: 1px solid rgb(34 211 238 / 0.2);
   border-radius: 0.75rem;
   background: rgb(13 18 28 / 0.8);
@@ -21,20 +53,33 @@
   box-shadow: 0 4px 12px rgb(8 51 68 / 0.2);
 }
 
+/* Preview rendered inside <DragOverlay> (portalled to <body>). */
+.dragOverlayCard {
+  width: min(40rem, 90vw);
+  cursor: grabbing;
+  opacity: 0.95;
+  transform: rotate(1.5deg);
+  filter: drop-shadow(0 18px 28px rgb(8 51 68 / 0.45));
+}
+
+.dragOverlayCard > * {
+  width: 100%;
+}
+
 .dragHandle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2.5rem;
-  height: 100%;
   min-height: 3rem;
+  flex-shrink: 0;
+  padding: 0.5rem;
   border: 0;
   background: transparent;
   color: #64748b;
   cursor: grab;
-  padding: 0.5rem;
   transition: color 150ms, background-color 150ms;
-  flex-shrink: 0;
+  touch-action: none;
 }
 
 .dragHandle:hover {
@@ -52,17 +97,9 @@
   padding: 1rem 1.25rem;
 }
 
-.sortableItem[data-dragging] {
-  box-shadow: 0 12px 24px rgb(8 51 68 / 0.3);
-  border-color: #22d3ee;
-}
-
-/* Prevent document scroll during drag */
-html.dragging,
-body.dragging {
-  overflow: hidden;
-  overscroll-behavior: contain;
-}
+/* Root scroll lock is handled globally in index.css via the `dragging-active`
+   class on <html>, so the reserved scrollbar gutter is preserved and the layout
+   does not shift while dragging. */
 
 .emptyState {
   padding: 2rem;
@@ -78,7 +115,7 @@ body.dragging {
   .dragHandle {
     width: 2rem;
   }
-  
+
   .sortableList {
     max-height: calc(100vh - 180px);
   }

@@ -1,5 +1,11 @@
 .page {
-  min-height: 100vh;
+  /* Definite height + column flex so .sortableList can flex to fill the
+     remaining space and become the only scrollable region on this page. */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  overflow-x: hidden;
   background: #0b0e14;
   color: #e2e8f0;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -10,6 +16,9 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
+  /* Never let the flex column squash the title row - .sortableList is the only
+     element that should absorb a height shortage. */
+  flex-shrink: 0;
 }
 
 .title {
@@ -43,10 +52,14 @@
   border-radius: 1rem;
   background: rgb(13 18 28 / 0.9);
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1), 0 10px 30px -10px rgb(8 51 68 / 0.2);
-  overflow: hidden;
   backdrop-filter: blur(12px);
-  margin-bottom: 2rem;
-  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  /* Size to content. `.page` is a flex column, so without this the default
+     flex-shrink: 1 squashed the card and clipped the balance text in half. */
+  flex-shrink: 0;
+  height: auto;
+  min-height: fit-content;
 }
 .summaryContent { display: flex; align-items: center; gap: 1rem; }
 .summaryIcon { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; background: rgb(34 211 238 / 0.1); color: #22d3ee; }

@@ -74,7 +74,7 @@ export default function Dashboard() {
     .reduce((sum, w) => sum + w.balance, 0);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-white p-6 font-sans">
+    <div className="min-h-full max-w-full overflow-x-hidden bg-[var(--bg-page)] text-white p-6 font-sans">
       {/* Grid thẻ thông số Stats Card */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard

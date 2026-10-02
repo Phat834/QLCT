@@ -25,6 +25,7 @@ export function useBudgetForm({ categories, wallets, refetch }: UseBudgetFormPro
   const [form, setForm] = useState<BudgetFormValues>(emptyForm);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -84,8 +85,18 @@ export function useBudgetForm({ categories, wallets, refetch }: UseBudgetFormPro
       setLoading(false);
     }
   };
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xoá?')) return;
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirm({ open: false, id: '' });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const id = deleteConfirm.id;
+    if (!id) return;
+    closeDeleteConfirm();
     try {
       await api.deleteBudget(id);
       await refetch();
@@ -118,7 +129,10 @@ export function useBudgetForm({ categories, wallets, refetch }: UseBudgetFormPro
     closeWarning,
     updateForm,
     handleSubmit,
-    handleDelete,
+    handleDelete: openDeleteConfirm,
     startEdit,
+    deleteConfirm,
+    closeDeleteConfirm,
+    handleDeleteConfirm,
   };
 }

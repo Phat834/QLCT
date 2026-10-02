@@ -142,9 +142,14 @@ export default function WalletList() {
   const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#1a1f2b] border-gray-600 text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50';
 
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-slate-200 font-sans">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-200 font-mono tracking-wide">Ví</h2>
+    <div className="h-full max-w-full overflow-x-hidden flex flex-col bg-[#0b0e14] text-slate-200 font-sans">
+      <div className="flex shrink-0 justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-slate-200 font-mono tracking-wide flex items-center gap-3">
+          Ví
+          <span className="text-sm font-normal text-slate-400 bg-[#1a1f2b] px-2 py-0.5 rounded font-mono">
+            {wallets.length}
+          </span>
+        </h2>
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
           className="bg-cyan-500 hover:bg-cyan-400 text-[#0b0e14] font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
