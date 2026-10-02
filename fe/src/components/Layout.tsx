@@ -10,8 +10,12 @@ export default function Layout() {
           the gutter on a non-scrolling <html> only produced an empty white
           strip down the right edge. An explicit background means the reserved
           gutter is dark too, and the fixed width stops content shifting
-          sideways when the scrollbar appears or disappears. */}
-      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-[#0b0e14] p-6 [scrollbar-gutter:stable]">
+          sideways when the scrollbar appears or disappears.
+
+          <main> deliberately carries no padding: each page owns its own
+          (PageShell for the three list pages, .page for TransactionList), so
+          page padding is never applied twice. */}
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-[#0b0e14] [scrollbar-gutter:stable]">
         <Outlet />
       </main>
     </div>

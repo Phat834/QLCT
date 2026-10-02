@@ -1,7 +1,11 @@
 .page {
-  /* 100% (not 100vh) so <main>'s padding does not add phantom overflow. */
+  /* <main> has no padding (see Layout.tsx), so each page owns its own.
+     Same container metrics as PageShell so the two layouts line up. */
+  width: 100%;
+  max-width: 72rem;
   min-height: 100%;
-  max-width: 100%;
+  margin-inline: auto;
+  padding: 1.5rem;
   overflow-x: hidden;
   background: var(--bg-page);
   color: #ffffff;

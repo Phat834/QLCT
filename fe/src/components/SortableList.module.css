@@ -1,24 +1,24 @@
 /* The single scrollable region for card lists.
-   Flexes into whatever space the page leaves, capped so the page itself never
-   overflows, and fenced on both axes. `scrollbar-gutter: stable` keeps its
-   width constant so nothing shifts sideways mid-drag; the explicit background
-   ensures the reserved gutter is dark rather than showing through to the page. */
+   Every metric here is shared by all three list pages, so the container
+   occupies the same box on Ví, Ngân sách and Danh mục and the layout does not
+   shift when switching tabs. */
 .sortableList {
   position: relative;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  width: 100%;
   min-height: 0;
-  max-width: 100%;
-  max-height: calc(100vh - 200px);
+  /* Cap only. The real height comes from `flex: 1 1 auto` inside PageShell's
+     `.content`, which resolves identically on all three tabs. */
+  max-height: calc(100vh - 220px);
+  padding: 0 0 1rem;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  /* Matches the page so the gutter strip reads as part of the surface. */
   background-color: #0b0e14;
-  padding-bottom: 1rem;
 }
 
 /* Wrapper that dnd-kit transforms. Must never contribute unbounded scrollable
@@ -26,7 +26,7 @@
 .sortableItemWrap {
   position: relative;
   flex: 0 0 auto;
-  max-width: 100%;
+  width: 100%;
 }
 
 /* Placeholder left behind while the card is being dragged. */
@@ -41,6 +41,7 @@
 .sortableItem {
   display: flex;
   align-items: stretch;
+  width: 100%;
   border: 1px solid rgb(34 211 238 / 0.2);
   border-radius: 0.75rem;
   background: rgb(13 18 28 / 0.8);
@@ -91,8 +92,11 @@
   cursor: grabbing;
 }
 
+/* Horizontal metrics are identical on every item regardless of how many rows
+   the card renders, so the outer borders line up across all three tabs. */
 .itemContent {
   flex: 1;
+  width: 100%;
   min-width: 0;
   padding: 1rem 1.25rem;
 }

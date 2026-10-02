@@ -1,8 +1,6 @@
-import { Plus } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import type { Budget } from '../contexts/AppContext';
 import { useCallback } from 'react';
-import styles from './BudgetList/BudgetList.module.css';
 import BudgetCard from './BudgetList/components/BudgetCard';
 import BudgetModal from './BudgetList/components/BudgetModal';
 import BudgetSummary from './BudgetList/components/BudgetSummary';
@@ -13,6 +11,7 @@ import type { BudgetCardData } from './BudgetList/utils/budgetUtils';
 import SortableList from '../components/SortableList';
 import { api } from '../services/api';
 import ConfirmModal from '../components/ConfirmModal';
+import PageShell from '../components/PageShell';
 
 export default function BudgetList() {
   const { budgets, categories, transactions, wallets, refetch, setBudgets } = useApp();
@@ -121,21 +120,12 @@ export default function BudgetList() {
   };
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <h2 className={styles.title}>
-          Ngân sách
-          <span className="text-sm font-normal text-slate-400 bg-[#1a1f2b] px-2 py-0.5 rounded font-mono ml-2">
-            {budgets.length}
-          </span>
-        </h2>
-        <button type="button" onClick={openAdd} className={styles.addButton}>
-          <Plus size={16} /> Thêm
-        </button>
-      </header>
-
-      <BudgetSummary totalBalance={totalBalance} />
-
+    <PageShell
+      title="Ngân sách"
+      count={budgets.length}
+      onAdd={openAdd}
+      headerExtra={<BudgetSummary totalBalance={totalBalance} />}
+    >
       <SortableList
         items={budgets}
         getId={(budget) => budget.id}
@@ -170,6 +160,6 @@ export default function BudgetList() {
         cancelText="Hủy"
         variant="danger"
       />
-    </div>
+    </PageShell>
   );
 }
