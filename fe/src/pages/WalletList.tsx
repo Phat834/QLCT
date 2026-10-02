@@ -7,6 +7,7 @@ import CurrencyInput from '../components/CurrencyInput';
 import { parseCurrency, formatCurrency } from '../utils/currency';
 import { Plus, Pencil, Trash2, X, Wallet } from 'lucide-react';
 import SortableList from '../components/SortableList';
+import ConfirmModal from '../components/ConfirmModal';
 
 type WalletType = 'AVAILABLE' | 'SAVINGS';
 
@@ -19,6 +20,7 @@ export default function WalletList() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState<WalletType>('AVAILABLE');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
 
   const handleReorderWallets = useCallback(async (newWallets: typeof wallets) => {
     // Optimistic update: update UI immediately
@@ -63,8 +65,18 @@ export default function WalletList() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xoá ví này?')) return;
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirm({ open: false, id: '' });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const id = deleteConfirm.id;
+    if (!id) return;
+    closeDeleteConfirm();
     setLoading(true);
     try {
       await api.deleteWallet(id);
@@ -111,17 +123,17 @@ export default function WalletList() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => startEdit(w)}
-          className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 font-mono text-sm rounded-lg hover:bg-cyan-500/20 transition"
           title="Sửa"
         >
-          <Pencil size={16} />
+          <Pencil size={14} /> Sửa
         </button>
         <button
-          onClick={() => handleDelete(w.id)}
-          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
+          onClick={() => openDeleteConfirm(w.id)}
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-red-500/40 bg-red-500/10 text-red-400 font-mono text-sm rounded-lg hover:bg-red-500/20 transition"
           title="Xoá"
         >
-          <Trash2 size={16} />
+          <Trash2 size={14} /> Xoá
         </button>
       </div>
     </div>
@@ -210,6 +222,17 @@ export default function WalletList() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteConfirm.open}
+        title="Xoá ví"
+        message="Bạn có chắc chắn muốn xoá ví này? Hành động này không thể hoàn tác."
+        onConfirm={handleDeleteConfirm}
+        onCancel={closeDeleteConfirm}
+        confirmText="Xoá"
+        cancelText="Hủy"
+        variant="danger"
+      />
     </div>
   );
 }
