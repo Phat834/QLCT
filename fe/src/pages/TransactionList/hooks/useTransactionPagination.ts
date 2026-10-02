@@ -15,12 +15,6 @@ import type { TransactionFilterValues, TransactionGroup } from '../utils/transac
 const daysPerPage = 7;
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
-function isTodayOrPast(date: Date): boolean {
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  return date <= today;
-}
-
 export type TransactionPaginationResult = {
   calendarGroups: TransactionGroup[];
   pagedGroups: TransactionGroup[];
@@ -31,6 +25,8 @@ export type TransactionPaginationResult = {
   goToPage: (page: number) => void;
   formatDateWithDay: (date: Date) => string;
   from: Date | null;
+  displayFrom: Date | null;
+  displayTo: Date | null;
 };
 
 export function useTransactionPagination(
@@ -52,23 +48,36 @@ export function useTransactionPagination(
   );
   const transactionsByDate = useMemo(() => groupTransactionsByDate(filtered), [filtered]);
   const sortedDateKeys = useMemo(() => [...transactionsByDate.keys()].sort(), [transactionsByDate]);
-  const firstDate = useMemo(
-    () => (sortedDateKeys.length > 0
-      ? getDateFromKey(sortedDateKeys[0])
-      : from || new Date()),
-    [sortedDateKeys, from]
+  const firstTxDate = useMemo(
+    () => (sortedDateKeys.length > 0 ? getDateFromKey(sortedDateKeys[0]) : null),
+    [sortedDateKeys]
   );
-  const lastDate = useMemo(
-    () => (sortedDateKeys.length > 0
-      ? getDateFromKey(sortedDateKeys[sortedDateKeys.length - 1])
-      : firstDate),
-    [sortedDateKeys, firstDate]
+  const lastTxDate = useMemo(
+    () => (sortedDateKeys.length > 0 ? getDateFromKey(sortedDateKeys[sortedDateKeys.length - 1]) : null),
+    [sortedDateKeys]
   );
-  const firstPageDate = useMemo(() => startOfWeek(firstDate), [firstDate]);
-  const totalDays = Math.max(
-    daysPerPage,
-    Math.floor((getLocalDayTime(lastDate) - getLocalDayTime(firstPageDate)) / millisecondsPerDay) + 1
-  );
+
+  // Determine the display date range
+  // Priority: filter dates > transaction dates > today
+  const displayFrom = useMemo(() => {
+    if (from) return from;
+    if (firstTxDate) return startOfWeek(firstTxDate);
+    return startOfWeek(new Date());
+  }, [from, firstTxDate]);
+
+  const displayTo = useMemo(() => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (to) return to < today ? to : today;
+    if (lastTxDate) return lastTxDate > today ? today : lastTxDate;
+    return today;
+  }, [to, lastTxDate]);
+
+  const firstPageDate = useMemo(() => startOfWeek(displayFrom), [displayFrom]);
+  const totalDays = useMemo(() => {
+    const diff = getLocalDayTime(displayTo) - getLocalDayTime(firstPageDate);
+    return Math.max(daysPerPage, Math.floor(diff / millisecondsPerDay) + 1);
+  }, [firstPageDate, displayTo]);
   const totalPages = Math.ceil(totalDays / daysPerPage);
   const safeCurrentPage = Math.min(currentPage, Math.max(0, totalPages - 1));
   const calendarGroups = useMemo(() => {
@@ -82,9 +91,14 @@ export function useTransactionPagination(
         items: transactionsByDate.get(dateKey) || [],
       };
     });
-    // Filter out future dates (only show up to today)
-    return allGroups.filter((group) => isTodayOrPast(group.date));
-  }, [firstPageDate, totalDays, transactionsByDate]);
+    // Filter: only show dates within display range (from filter or transaction bounds)
+    return allGroups.filter((group) => {
+      const groupTime = getLocalDayTime(group.date);
+      const fromTime = getLocalDayTime(displayFrom);
+      const toTime = getLocalDayTime(displayTo);
+      return groupTime >= fromTime && groupTime <= toTime;
+    });
+  }, [firstPageDate, totalDays, transactionsByDate, displayFrom, displayTo]);
   const pagedGroups = useMemo(
     () => calendarGroups.slice(safeCurrentPage * daysPerPage, (safeCurrentPage + 1) * daysPerPage),
     [calendarGroups, safeCurrentPage]
@@ -110,5 +124,7 @@ export function useTransactionPagination(
     goToPage,
     formatDateWithDay,
     from,
+    displayFrom,
+    displayTo,
   };
 }

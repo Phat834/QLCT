@@ -1,5 +1,12 @@
 .page {
-  min-height: 100vh;
+  /* <main> has no padding (see Layout.tsx), so each page owns its own.
+     Same container metrics as PageShell so the two layouts line up. */
+  width: 100%;
+  max-width: 72rem;
+  min-height: 100%;
+  margin-inline: auto;
+  padding: 1.5rem;
+  overflow-x: hidden;
   background: var(--bg-page);
   color: #ffffff;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -141,9 +148,19 @@
 .noteCell { max-width: 20rem; padding: 0.875rem 1.25rem; overflow: hidden; color: #e2e8f0; font-size: 15px; text-overflow: ellipsis; }
 .totalCell { padding: 0.875rem 1.25rem; color: #fb7185; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 15px; font-weight: 500; text-align: right; white-space: nowrap; }
 .balanceRow { padding: 0.5rem 1.25rem; border-top: 1px solid rgb(34 211 238 / 0.1); color: #cbd5e1; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.875rem; text-align: right; }
-.balanceValue { color: #67e8f9; }
+  .balanceValue { color: #67e8f9; }
 
-.pagination {
+  .emptyDayRow { background: rgb(0 0 0 / 0.15); }
+  .emptyDayCell {
+    padding: 1.5rem 1.25rem;
+    color: #64748b;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 15px;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .pagination {
   display: flex;
   flex-direction: column;
   align-items: center;

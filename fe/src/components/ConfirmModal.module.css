@@ -1,0 +1,118 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.6);
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  width: 100%;
+  max-width: 20rem;
+  border: 1px solid rgb(34 211 238 / 0.3);
+  border-radius: 1.5rem;
+  background: #0d121c;
+  box-shadow: 0 25px 50px -12px rgb(8 51 68 / 0.3);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.iconWrapper {
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 1rem;
+  background: rgb(245 158 11 / 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  width: 3rem;
+  height: 3rem;
+  color: #fbbf24;
+  stroke-width: 2.5;
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.375;
+}
+
+.message {
+  margin: 0 0 1.5rem;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.button {
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms;
+}
+
+@media (min-width: 480px) {
+  .button {
+    width: auto;
+    min-width: 7rem;
+  }
+}
+
+.cancelButton {
+  border: 1px solid rgb(34 211 238 / 0.3);
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.cancelButton:hover {
+  background: rgb(34 211 238 / 0.1);
+}
+
+.danger {
+  border: 1px solid rgb(239 68 68 / 0.3);
+  background: transparent;
+  color: #f87171;
+}
+
+.danger:hover {
+  background: rgb(239 68 68 / 0.1);
+}
+
+.warning {
+  border: 1px solid rgb(245 158 11 / 0.3);
+  background: transparent;
+  color: #fbbf24;
+}
+
+.warning:hover {
+  background: rgb(245 158 11 / 0.1);
+}

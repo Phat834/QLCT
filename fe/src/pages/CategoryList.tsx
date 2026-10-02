@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
-import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Pencil, Trash2, X } from 'lucide-react';
 import SortableList from '../components/SortableList';
+import ConfirmModal from '../components/ConfirmModal';
+import PageShell from '../components/PageShell';
 
 export default function CategoryList() {
   const { categories, refetch, setCategories } = useApp();
@@ -11,6 +13,7 @@ export default function CategoryList() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
 
   const handleReorderCategories = useCallback(async (newCategories: typeof categories) => {
     // Optimistic update: update UI immediately
@@ -53,8 +56,18 @@ export default function CategoryList() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xoá danh mục này?')) return;
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirm({ open: false, id: '' });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const id = deleteConfirm.id;
+    if (!id) return;
+    closeDeleteConfirm();
     setLoading(true);
     try {
       await api.deleteCategory(id);
@@ -89,17 +102,17 @@ export default function CategoryList() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => startEdit(c)}
-          className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-[#1a1f2b] rounded-lg transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 font-mono text-sm rounded-lg hover:bg-cyan-500/20 transition"
           title="Sửa"
         >
-          <Pencil size={16} />
+          <Pencil size={14} /> Sửa
         </button>
         <button
-          onClick={() => handleDelete(c.id)}
-          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-[#1a1f2b] rounded-lg transition"
+          onClick={() => openDeleteConfirm(c.id)}
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-red-500/40 bg-red-500/10 text-red-400 font-mono text-sm rounded-lg hover:bg-red-500/20 transition"
           title="Xoá"
         >
-          <Trash2 size={16} />
+          <Trash2 size={14} /> Xoá
         </button>
       </div>
     </div>
@@ -108,17 +121,11 @@ export default function CategoryList() {
   const inputClass = 'w-full border rounded-lg px-3 py-2 bg-[#1a1f2b] border-gray-600 text-slate-200 font-sans focus:outline-none focus:border-cyan-500/50';
 
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-slate-200 font-sans">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-200 font-mono tracking-wide">Danh mục</h2>
-        <button
-          onClick={() => { resetForm(); setShowModal(true); }}
-          className="bg-cyan-500 hover:bg-cyan-400 text-[#0b0e14] font-medium px-4 py-2 rounded-lg flex items-center gap-2 font-mono tracking-wide transition"
-        >
-          <Plus size={16} /> Thêm
-        </button>
-      </div>
-
+    <PageShell
+      title="Danh mục"
+      count={categories.length}
+      onAdd={() => { resetForm(); setShowModal(true); }}
+    >
       <SortableList
         items={categories}
         getId={(c) => c.id}
@@ -173,6 +180,17 @@ export default function CategoryList() {
           </div>
         </div>
       )}
-    </div>
+
+      <ConfirmModal
+        open={deleteConfirm.open}
+        title="Xoá danh mục"
+        message="Bạn có chắc chắn muốn xoá danh mục này? Hành động này không thể hoàn tác."
+        onConfirm={handleDeleteConfirm}
+        onCancel={closeDeleteConfirm}
+        confirmText="Xoá"
+        cancelText="Hủy"
+        variant="danger"
+      />
+    </PageShell>
   );
 }

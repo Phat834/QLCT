@@ -1,0 +1,89 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 1.5rem;
+  height: 100%;
+  color: #e2e8f0;
+  overflow-x: hidden;
+}
+
+/* Fixed box for the header row on every list page. `min-height` is sized to the
+   tallest header content in the app (the budget balance chip, ~73px including
+   its border), so the title on the left and the add button on the right sit at
+   identical coordinates on all three tabs and never jump when switching. */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.75rem;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0;
+}
+
+/* Title + optional header extra (e.g. the budget balance chip). */
+.headerMain {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+.count {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #1a1f2b;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #06b6d4;
+  color: #0b0e14;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.addButton:hover { background: #22d3ee; }
+
+/* Holds the list. `min-height: 0` lets the scrollable child shrink instead of
+   pushing the page into overflow. */
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (max-width: 640px) {
+  .page { padding: 1rem; }
+  .header { flex-wrap: wrap; min-height: 0; }
+  .headerMain { flex: 1 1 100%; }
+}

@@ -1,13 +1,15 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
+  type DragCancelEvent,
   type DragEndEvent,
-  type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -16,6 +18,7 @@ import {
   verticalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
+import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import styles from './SortableList.module.css';
@@ -36,14 +39,23 @@ function SortableItem({ id, children, disabled = false }: SortableItemProps) {
     isDragging,
   } = useSortable({ id, disabled });
 
+  // NOTE: this transform is only the bounded reorder offset. The element that
+  // actually follows the cursor is the DragOverlay, which is portalled to
+  // <body> - so it can never inflate this container's scrollable overflow.
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-dragging={isDragging ? '' : undefined}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={styles.sortableItemWrap}
+      data-dragging={isDragging ? '' : undefined}
+      {...attributes}
+      {...listeners}
+    >
       <div className={styles.sortableItem}>
         <button
           type="button"
@@ -81,6 +93,7 @@ export default function SortableList<T>({
 }: SortableListProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [sortedItems, setSortedItems] = useState<T[]>(items);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   // Sync internal state with parent items when they change (but not during drag)
   useEffect(() => {
@@ -98,30 +111,38 @@ export default function SortableList<T>({
     })
   );
 
-  const handleDragStart = useCallback(() => {
-    // Prevent body scroll during drag
-    document.body.style.overflow = 'hidden';
-    document.body.style.overscrollBehavior = 'contain';
-    document.documentElement.style.overflow = 'hidden';
-    document.documentElement.style.overscrollBehavior = 'contain';
+  const lockRootScroll = useCallback(() => {
+    document.documentElement.classList.add('dragging-active');
   }, []);
 
+  const unlockRootScroll = useCallback(() => {
+    document.documentElement.classList.remove('dragging-active');
+  }, []);
+
+  // Never leave the root scroller locked if the list unmounts mid-drag.
+  useEffect(() => unlockRootScroll, [unlockRootScroll]);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    lockRootScroll();
+    setActiveId(String(event.active.id));
+  }, [lockRootScroll]);
+
+  const handleDragCancel = useCallback((_event: DragCancelEvent) => {
+    unlockRootScroll();
+    setActiveId(null);
+  }, [unlockRootScroll]);
+
   const handleDragEnd = useCallback((event: DragEndEvent) => {
-    // Restore body scroll
-    document.body.style.overflow = '';
-    document.body.style.overscrollBehavior = '';
-    document.documentElement.style.overflow = '';
-    document.documentElement.style.overscrollBehavior = '';
+    unlockRootScroll();
+    setActiveId(null);
 
     const { active, over } = event;
-    console.log('DragEnd:', { activeId: active?.id, overId: over?.id });
 
     if (over && active.id !== over.id) {
       setSortedItems((currentItems: T[]) => {
         const oldIndex = currentItems.findIndex((item: T) => getId(item) === active.id);
         const newIndex = currentItems.findIndex((item: T) => getId(item) === over.id);
-        console.log('Reorder indices:', { oldIndex, newIndex });
-        
+
         if (oldIndex !== -1 && newIndex !== -1) {
           const newItems = arrayMove(currentItems, oldIndex, newIndex);
           onReorder(newItems);
@@ -130,65 +151,56 @@ export default function SortableList<T>({
         return currentItems;
       });
     }
-  }, [getId, onReorder]);
-
-  // Prevent auto-scroll when dragging near edges
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    if (!containerRef.current) return;
-    
-    const container = containerRef.current;
-    const rect = container.getBoundingClientRect();
-    const activatorEvent = event.activatorEvent as MouseEvent | TouchEvent | undefined;
-    let clientY = 0;
-    if (activatorEvent) {
-      if ('clientY' in activatorEvent) {
-        clientY = activatorEvent.clientY;
-      } else if ('touches' in activatorEvent && activatorEvent.touches.length > 0) {
-        clientY = activatorEvent.touches[0].clientY;
-      }
-    }
-    
-    // Only allow scrolling within the container, not the window
-    const scrollThreshold = 50;
-    const isNearTop = clientY - rect.top < scrollThreshold;
-    const isNearBottom = rect.bottom - clientY < scrollThreshold;
-    
-    if (isNearTop) {
-      container.scrollTop = Math.max(0, container.scrollTop - 10);
-    } else if (isNearBottom) {
-      container.scrollTop = Math.min(
-        container.scrollHeight - container.clientHeight,
-        container.scrollTop + 10
-      );
-    }
-  }, []);
+  }, [getId, onReorder, unlockRootScroll]);
 
   if (sortedItems.length === 0) {
     return <div className={styles.emptyState}>{emptyMessage}</div>;
   }
 
   const itemIds = sortedItems.map(getId);
+  const activeItem = activeId !== null
+    ? sortedItems.find((item: T) => getId(item) === activeId)
+    : undefined;
 
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
+      onDragCancel={handleDragCancel}
       onDragEnd={handleDragEnd}
-      onDragOver={handleDragOver}
-      autoScroll={false}
+      // dnd-kit's own auto-scroller runs on a timer, so it keeps scrolling while
+      // the pointer is held still against an edge - and it treats the top and
+      // bottom edges symmetrically via Direction.Backward / Direction.Forward.
+      autoScroll={{
+        enabled: true,
+        // Trigger zone = the outer 20% of the container's height.
+        threshold: { x: 0, y: 0.2 },
+        acceleration: 10,
+        interval: 20,
+        // Only the list container may scroll. This is what keeps the page from
+        // growing a second scrollbar: dnd-kit puts
+        // `document.scrollingElement` into its scrollable-ancestor list
+        // (getScrollableAncestors), so it has to be filtered out explicitly.
+        canScroll: (element) => (
+          element === containerRef.current
+          && element !== document.scrollingElement
+        ),
+        // Must stay false: dnd-kit reads this independently of `enabled` and
+        // defaults it to true, which makes it scroll ancestors to "compensate"
+        // for the dragged node shifting downwards.
+        layoutShiftCompensation: false,
+      }}
+      // Keep the drag on the vertical axis and inside the parent element so it
+      // can never drift sideways or escape the list.
+      modifiers={[restrictToVerticalAxis, restrictToParentElement]}
     >
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-        <div 
+        <div
           ref={containerRef}
-          className={styles.sortableList} 
-          role="list" 
+          className={styles.sortableList}
+          role="list"
           aria-label="Danh sách có thể sắp xếp"
-          style={{ 
-            maxHeight: 'calc(100vh - 200px)',
-            overflowY: 'auto',
-            overscrollBehavior: 'contain',
-          }}
         >
           {sortedItems.map((item) => (
             <SortableItem
@@ -201,6 +213,15 @@ export default function SortableList<T>({
           ))}
         </div>
       </SortableContext>
+
+      {/* Rendered in a portal on <body>: the dragged preview follows the cursor
+          without ever extending this container's scrollable area, which is what
+          caused the unbounded black gap when dragging downwards. */}
+      <DragOverlay dropAnimation={null}>
+        {activeItem ? (
+          <div className={styles.dragOverlayCard}>{renderItem(activeItem)}</div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

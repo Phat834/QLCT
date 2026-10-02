@@ -1,8 +1,6 @@
-import { Plus } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import type { Budget } from '../contexts/AppContext';
 import { useCallback } from 'react';
-import styles from './BudgetList/BudgetList.module.css';
 import BudgetCard from './BudgetList/components/BudgetCard';
 import BudgetModal from './BudgetList/components/BudgetModal';
 import BudgetSummary from './BudgetList/components/BudgetSummary';
@@ -12,6 +10,8 @@ import { useBudgetForm } from './BudgetList/hooks/useBudgetForm';
 import type { BudgetCardData } from './BudgetList/utils/budgetUtils';
 import SortableList from '../components/SortableList';
 import { api } from '../services/api';
+import ConfirmModal from '../components/ConfirmModal';
+import PageShell from '../components/PageShell';
 
 export default function BudgetList() {
   const { budgets, categories, transactions, wallets, refetch, setBudgets } = useApp();
@@ -31,6 +31,9 @@ export default function BudgetList() {
     handleSubmit,
     handleDelete,
     startEdit,
+    deleteConfirm,
+    closeDeleteConfirm,
+    handleDeleteConfirm,
   } = useBudgetForm({ categories, wallets, refetch });
 
   useBudgetAutoReset({
@@ -117,16 +120,12 @@ export default function BudgetList() {
   };
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <h2 className={styles.title}>Ngân sách</h2>
-        <button type="button" onClick={openAdd} className={styles.addButton}>
-          <Plus size={16} /> Thêm
-        </button>
-      </header>
-
-      <BudgetSummary totalBalance={totalBalance} />
-
+    <PageShell
+      title="Ngân sách"
+      count={budgets.length}
+      onAdd={openAdd}
+      headerExtra={<BudgetSummary totalBalance={totalBalance} />}
+    >
       <SortableList
         items={budgets}
         getId={(budget) => budget.id}
@@ -150,6 +149,17 @@ export default function BudgetList() {
       )}
 
       <WarningModal open={showWarning} onClose={closeWarning} />
-    </div>
+
+      <ConfirmModal
+        open={deleteConfirm.open}
+        title="Xoá ngân sách"
+        message="Bạn có chắc chắn muốn xoá ngân sách này? Hành động này không thể hoàn tác."
+        onConfirm={handleDeleteConfirm}
+        onCancel={closeDeleteConfirm}
+        confirmText="Xoá"
+        cancelText="Hủy"
+        variant="danger"
+      />
+    </PageShell>
   );
 }
