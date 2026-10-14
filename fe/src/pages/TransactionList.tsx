@@ -89,7 +89,7 @@ export default function TransactionList() {
 
       <PaginationControls
         groups={pagination.pagedGroups}
-        currentPage={pagination.safeCurrentPage}
+        currentPage={pagination.currentPage}
         totalPages={pagination.totalPages}
         formatDateWithDay={pagination.formatDateWithDay}
         onPageChange={pagination.goToPage}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Transaction } from '../../../contexts/AppContext';
 import {
   endOfDay,
@@ -21,8 +21,9 @@ export type TransactionPaginationResult = {
   expenseByDate: Record<string, number>;
   currentPage: number;
   totalPages: number;
-  safeCurrentPage: number;
   goToPage: (page: number) => void;
+  nextPage: () => void;
+  prevPage: () => void;
   formatDateWithDay: (date: Date) => string;
   from: Date | null;
   displayFrom: Date | null;
@@ -33,12 +34,10 @@ export function useTransactionPagination(
   transactions: Transaction[],
   filters: TransactionFilterValues
 ): TransactionPaginationResult {
-  const [currentPage, setCurrentPage] = useState(0);
+  // null = người dùng chưa chọn trang nào -> hệ thống tự động hiển thị
+  // trang mới nhất (trang chứa ngày gần nhất).
+  const [userSelectedPage, setUserSelectedPage] = useState<number | null>(null);
   const { fromDate, toDate, typeFilter, categoryFilter } = filters;
-
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [fromDate, toDate, typeFilter, categoryFilter]);
 
   const from = useMemo(() => (fromDate ? startOfDay(fromDate) : null), [fromDate]);
   const to = useMemo(() => (toDate ? endOfDay(toDate) : null), [toDate]);
@@ -79,7 +78,32 @@ export function useTransactionPagination(
     return Math.max(daysPerPage, Math.floor(diff / millisecondsPerDay) + 1);
   }, [firstPageDate, displayTo]);
   const totalPages = Math.ceil(totalDays / daysPerPage);
-  const safeCurrentPage = Math.min(currentPage, Math.max(0, totalPages - 1));
+
+  // Trang hiện hành được suy dẫn đồng bộ ngay trong render: nếu người dùng
+  // chưa chọn trang nào (null) thì luôn là trang mới nhất. Không cần effect
+  // nhảy trang, không flash, không race condition khi dữ liệu load xong.
+  const currentPage =
+    userSelectedPage !== null
+      ? Math.min(Math.max(0, userSelectedPage), Math.max(0, totalPages - 1))
+      : Math.max(0, totalPages - 1);
+
+  // Khi người dùng thay đổi bộ lọc (không phải lần mount đầu), đưa về trang đầu.
+  // So sánh với giá trị trước để phân biệt "lần đầu mount" với "bộ lọc thay đổi",
+  // tránh effect chạy trên mount ghi đè lên trang mới nhất vừa suy dẫn.
+  const prevFilters = useRef({ fromDate, toDate, typeFilter, categoryFilter });
+  useEffect(() => {
+    const prev = prevFilters.current;
+    const changed =
+      prev.fromDate !== fromDate ||
+      prev.toDate !== toDate ||
+      prev.typeFilter !== typeFilter ||
+      prev.categoryFilter !== categoryFilter;
+    prevFilters.current = { fromDate, toDate, typeFilter, categoryFilter };
+    if (changed) {
+      setUserSelectedPage(0);
+    }
+  }, [fromDate, toDate, typeFilter, categoryFilter]);
+
   const calendarGroups = useMemo(() => {
     const allGroups = Array.from({ length: totalDays }, (_, index) => {
       const date = new Date(firstPageDate);
@@ -100,8 +124,8 @@ export function useTransactionPagination(
     });
   }, [firstPageDate, totalDays, transactionsByDate, displayFrom, displayTo]);
   const pagedGroups = useMemo(
-    () => calendarGroups.slice(safeCurrentPage * daysPerPage, (safeCurrentPage + 1) * daysPerPage),
-    [calendarGroups, safeCurrentPage]
+    () => calendarGroups.slice(currentPage * daysPerPage, (currentPage + 1) * daysPerPage),
+    [calendarGroups, currentPage]
   );
   const expenseByDate = useMemo(() => calendarGroups.reduce((map, group) => {
     const total = group.items
@@ -111,8 +135,10 @@ export function useTransactionPagination(
     return map;
   }, {} as Record<string, number>), [calendarGroups]);
   const goToPage = (page: number) => {
-    setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
+    setUserSelectedPage(Math.min(Math.max(0, page), Math.max(0, totalPages - 1)));
   };
+  const nextPage = () => goToPage(currentPage + 1);
+  const prevPage = () => goToPage(currentPage - 1);
 
   return {
     calendarGroups,
@@ -120,8 +146,9 @@ export function useTransactionPagination(
     expenseByDate,
     currentPage,
     totalPages,
-    safeCurrentPage,
     goToPage,
+    nextPage,
+    prevPage,
     formatDateWithDay,
     from,
     displayFrom,

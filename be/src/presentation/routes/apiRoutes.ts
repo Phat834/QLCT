@@ -1,7 +1,6 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { ApiController } from '../controllers/ApiController.js';
 import { WalletController } from '../controllers/WalletController.js';
-import { CreateWalletUseCase } from '../../application/use-cases/CreateWalletUseCase.js';
 import { CreateCategoryUseCase } from '../../application/use-cases/CreateCategoryUseCase.js';
 import { UpdateCategoryUseCase } from '../../application/use-cases/UpdateCategoryUseCase.js';
 import { DeleteCategoryUseCase } from '../../application/use-cases/DeleteCategoryUseCase.js';
@@ -22,8 +21,43 @@ import { SupabaseCategoryRepository } from '../../infrastructure/database/Supaba
 import { SupabaseBudgetRepository } from '../../infrastructure/database/SupabaseBudgetRepository.js';
 import { createTransactionRouter } from './transactionRoutes.js';
 
+// Lưu danh sách các thiết bị (Web / Điện thoại) đang mở ứng dụng
+const sseClients = new Set<Response>();
+
 export const createApiRouter = () => {
   const router = Router();
+
+  // 1. Endpoint SSE để Frontend kết nối lắng nghe Real-time
+  router.get('/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    // Gửi ping giữ kết nối mỗi 25s để tránh bị Render ngắt giữa chừng
+    const keepAlive = setInterval(() => {
+      res.write(': keep-alive\n\n');
+    }, 25000);
+
+    sseClients.add(res);
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      sseClients.delete(res);
+    });
+  });
+
+  // 2. Middleware tự động: Hễ có request POST, PUT, DELETE thành công -> Báo cho mọi thiết bị!
+  router.use((req, res, next) => {
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+      res.on('finish', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          const payload = `data: ${JSON.stringify({ type: 'DATA_UPDATED', timestamp: Date.now() })}\n\n`;
+          sseClients.forEach((client) => client.write(payload));
+        }
+      });
+    }
+    next();
+  });
 
   const transactionRepo = new SupabaseTransactionRepository();
   const walletRepo = new SupabaseWalletRepository();
