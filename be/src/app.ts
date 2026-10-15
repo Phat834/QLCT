@@ -6,6 +6,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 app.use('/api', createApiRouter());
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
