@@ -22,6 +22,6 @@ export const createTransactionRouter = () => {
   router.post('/expense', (req, res) => transactionController.createExpense(req, res));
   router.post('/income', (req, res) => transactionController.createIncome(req, res));
   router.post('/transfer', (req, res) => transactionController.createTransfer(req, res));
-
+  router.post('/webhook', (req, res) => transactionController.handleWebhookExpense(req, res));
   return router;
 };
