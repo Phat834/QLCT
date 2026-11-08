@@ -34,9 +34,9 @@ export const createApiRouter = () => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders?.();
 
-    // Gửi ping giữ kết nối mỗi 25s để tránh bị Render ngắt giữa chừng
+    // Gửi heartbeat giữ kết nối mỗi 25s với định dạng rõ ràng; FE sẽ bỏ qua type này
     const keepAlive = setInterval(() => {
-      res.write(': keep-alive\n\n');
+      res.write(`data: ${JSON.stringify({ type: 'HEARTBEAT' })}\n\n`);
     }, 25000);
 
     sseClients.add(res);
