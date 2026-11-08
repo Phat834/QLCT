@@ -18,7 +18,7 @@ export class UpdateBudgetUseCase {
 
     const walletIds = dto.walletIds || existing.getWalletIds();
     const dueDate = dto.dueDate !== undefined ? dto.dueDate : existing.getDueDate();
-    const budget = new Budget(dto.categoryId, walletIds, dto.limitAmount, existing.getCurrentSpent(), dto.id, dueDate, existing.getCreatedAt());
+    const budget = new Budget(dto.categoryId, walletIds, dto.limitAmount, existing.getCurrentSpent(), dto.id, dueDate, existing.getCreatedAt(), existing.getSortOrder());
     await this.budgetRepo.save(budget);
     return budget;
   }

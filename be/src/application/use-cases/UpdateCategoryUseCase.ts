@@ -14,7 +14,7 @@ export class UpdateCategoryUseCase {
     const existing = await this.categoryRepo.findById(dto.id);
     if (!existing) throw new Error('Không tìm thấy danh mục!');
 
-    const category = new Category(dto.id, dto.name, dto.icon);
+    const category = new Category(dto.id, dto.name, dto.icon, existing.getCreatedAt(), existing.getSortOrder());
     await this.categoryRepo.update(category);
     return category;
   }

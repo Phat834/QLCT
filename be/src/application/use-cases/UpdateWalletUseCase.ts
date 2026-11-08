@@ -16,7 +16,7 @@ export class UpdateWalletUseCase {
     const existing = await this.walletRepo.findById(dto.id);
     if (!existing) throw new Error('Không tìm thấy ví!');
 
-    const wallet = new Wallet(dto.id, dto.name, dto.balance, existing.getCreatedAt(), dto.type);
+    const wallet = new Wallet(dto.id, dto.name, dto.balance, existing.getCreatedAt(), dto.type, existing.getSortOrder());
     await this.walletRepo.update(wallet);
     return wallet;
   }
