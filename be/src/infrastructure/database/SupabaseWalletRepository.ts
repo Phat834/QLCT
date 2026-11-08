@@ -3,6 +3,24 @@ import { Wallet } from '../../domain/entities/Wallet.js';
 import { WalletType } from '../../domain/enums/WalletType.js';
 import { IWalletRepository } from '../../domain/repositories/IWalletRepository.js';
 
+function toWallet(item: any): Wallet | null {
+  try {
+    if (!item || item.id == null) return null;
+    const type = item.type === WalletType.SAVINGS ? WalletType.SAVINGS : WalletType.AVAILABLE;
+    return new Wallet(
+      String(item.id),
+      item.name ?? '',
+      Number(item.balance ?? 0),
+      item.created_at ? new Date(item.created_at) : undefined,
+      type,
+      Number(item.sort_order ?? 0)
+    );
+  } catch (err) {
+    console.error('[SupabaseWalletRepository] Lỗi map wallet:', err, item);
+    return null;
+  }
+}
+
 export class SupabaseWalletRepository implements IWalletRepository {
   async save(wallet: Wallet): Promise<void> {
     const { error } = await supabase
@@ -33,37 +51,42 @@ export class SupabaseWalletRepository implements IWalletRepository {
       .single();
 
     if (error || !data) {
+      if (error) console.error('[SupabaseWalletRepository] findById error:', error.message, { id });
       return null;
     }
 
-    return new Wallet(
-      data.id,
-      data.name,
-      Number(data.balance),
-      new Date(data.created_at),
-      data.type || WalletType.AVAILABLE,
-      data.sort_order ?? 0
-    );
+    return toWallet(data);
   }
 
   async findAll(): Promise<Wallet[]> {
-    const { data, error } = await supabase.from('wallets').select('*').order('sort_order', { ascending: true, nullsFirst: false });
+    try {
+      let { data, error } = await supabase
+        .from('wallets')
+        .select('*')
+        .order('sort_order', { ascending: true, nullsFirst: false });
 
-    if (error) {
-      throw new Error(`Lỗi khi lấy danh sách Wallet: ${error.message}`);
+      // Fallback nếu cột sort_order chưa tồn tại trong DB
+      if (error) {
+        console.warn('[SupabaseWalletRepository] findAll ordered query failed, fallback select *:', error.message);
+        const fallback = await supabase.from('wallets').select('*');
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error) {
+        console.error('[SupabaseWalletRepository] findAll error:', error.message, error.details, error.hint);
+        return [];
+      }
+
+      if (!Array.isArray(data) || data.length === 0) return [];
+
+      return data
+        .map((item) => toWallet(item))
+        .filter((w): w is Wallet => w !== null);
+    } catch (err) {
+      console.error('[SupabaseWalletRepository] findAll unexpected error:', err);
+      return [];
     }
-
-    return data.map(
-      (item) =>
-        new Wallet(
-          item.id,
-          item.name,
-          Number(item.balance),
-          new Date(item.created_at),
-          item.type || WalletType.AVAILABLE,
-          item.sort_order ?? 0
-        )
-    );
   }
 
   async delete(id: string): Promise<void> {
