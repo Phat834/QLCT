@@ -113,9 +113,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
     const eventSource = new EventSource(`${API_BASE}/events`);
 
-    eventSource.onmessage = () => {
-      // Hễ Backend báo có thay đổi (từ điện thoại hoặc thiết bị khác) -> tải lại dữ liệu ngầm
-      refetch();
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        // Chỉ refetch khi backend báo dữ liệu thực sự thay đổi, bỏ qua heartbeat/ping/invalid
+        if (data?.type === 'DATA_UPDATED') {
+          refetch();
+        }
+      } catch {
+        // Bỏ qua message không phải JSON hợp lệ (heartbeat dạng comment không vào đây)
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      // Mất kết nối tạm thời: EventSource tự reconnect; không refetch để tránh vòng lặp
+      console.warn('SSE connection error, will retry automatically.', err);
     };
 
     // Tự động đồng bộ lại khi người dùng quay lại tab web hoặc mở sáng màn hình điện thoại
