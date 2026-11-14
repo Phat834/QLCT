@@ -2,7 +2,13 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from '../../../services/api';
 import { parseCurrency } from '../../../utils/currency';
-import type { Transaction } from '../../../contexts/AppContext';
+import type { Budget, Category, Transaction, Wallet } from '../../../contexts/AppContext';
+import {
+  addMonth,
+  formatDueDateForApi,
+  getActualSpent,
+  parseDueDate,
+} from '../../BudgetList/utils/budgetUtils';
 
 export type TransactionFormValues = {
   amount: string;
@@ -16,9 +22,19 @@ export type TransactionFormValues = {
 
 type UseTransactionFormProps = {
   refetch: () => Promise<void>;
+  budgets?: Budget[];
+  categories?: Category[];
+  transactions?: Transaction[];
+  wallets?: Wallet[];
 };
 
-export function useTransactionForm({ refetch }: UseTransactionFormProps) {
+export function useTransactionForm({
+  refetch,
+  budgets = [],
+  categories = [],
+  transactions = [],
+  wallets = [],
+}: UseTransactionFormProps) {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<TransactionFormValues>({
     amount: '',
@@ -71,13 +87,35 @@ export function useTransactionForm({ refetch }: UseTransactionFormProps) {
       const id = 'tx_' + Math.random().toString(36).slice(2, 10);
 
       if (form.type === 'EXPENSE') {
+        const amount = parseCurrency(form.amount);
         await api.createExpense({
           id,
           walletId: form.walletId,
           categoryId: form.categoryId,
-          amount: parseCurrency(form.amount),
+          amount,
           note: form.note,
         });
+
+        const matchedBudgets = budgets.filter((budget) =>
+          budget.categoryId === form.categoryId
+          && !!budget.dueDate
+          && ((budget.walletIds || []).length === 0 || (budget.walletIds || []).includes(form.walletId))
+        );
+        for (const budget of matchedBudgets) {
+          const rawSpentBefore = getActualSpent(budget.categoryId, budget.walletIds || [], categories, transactions, wallets);
+          const rawSpentAfter = rawSpentBefore + amount;
+          localStorage.setItem('budgetReset_' + budget.id, String(rawSpentAfter));
+          const currentDue = parseDueDate(budget.dueDate);
+          if (currentDue) {
+            const nextDue = addMonth(currentDue);
+            await api.updateBudget(budget.id, {
+              categoryId: budget.categoryId,
+              walletIds: budget.walletIds || [],
+              limitAmount: amount !== budget.limitAmount ? amount : budget.limitAmount,
+              dueDate: formatDueDateForApi(nextDue),
+            });
+          }
+        }
       } else if (form.type === 'INCOME') {
         await api.createIncome({
           id,

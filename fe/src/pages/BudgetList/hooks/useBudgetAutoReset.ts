@@ -6,7 +6,6 @@ import {
   formatDueDateForApi,
   getActualSpent,
   getResetBaseline,
-  isDueDatePassed,
   parseDueDate,
 } from '../utils/budgetUtils';
 
@@ -42,9 +41,8 @@ export function useBudgetAutoReset({
         const baseline = getResetBaseline(budget.id);
         const spent = Math.max(0, rawSpent - baseline);
         const pct = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0;
-        const due = isDueDatePassed(budget.dueDate);
 
-        if (pct >= 100 && due && budget.dueDate) {
+        if (pct >= 100 && budget.dueDate) {
           const currentDue = parseDueDate(budget.dueDate);
           if (currentDue) {
             const nextDue = addMonth(currentDue);

@@ -14,6 +14,7 @@ export type BudgetCardData = {
   categoryName: string;
   budgetWallets: Wallet[];
   spent: number;
+  rawSpent?: number;
   limitAmount: number;
   pct: number;
   dueStatus: BudgetDueStatus;

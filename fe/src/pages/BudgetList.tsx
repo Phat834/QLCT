@@ -97,6 +97,7 @@ export default function BudgetList() {
       categoryName: category?.name || budget.categoryId,
       budgetWallets,
       spent,
+      rawSpent,
       limitAmount: budget.limitAmount,
       pct,
       dueStatus,
@@ -109,9 +110,27 @@ export default function BudgetList() {
       <BudgetCard
         key={budget.id}
         data={data}
-        onReset={(id: string, spent: number) => {
-          localStorage.setItem('budgetReset_' + id, String(spent));
-          window.location.reload();
+        onReset={async (id: string, rawSpent: number) => {
+          localStorage.setItem('budgetReset_' + id, String(rawSpent));
+          if (budget.dueDate) {
+            const datePart = budget.dueDate.split('T')[0];
+            const [y, m, d] = datePart.split('-').map(Number);
+            const nextDue = new Date(y, m, d); // local, +1 month (month is 1-indexed in parts)
+            const nextDueStr = `${nextDue.getFullYear()}-${String(nextDue.getMonth() + 1).padStart(2, '0')}-${String(nextDue.getDate()).padStart(2, '0')}`;
+            try {
+              await api.updateBudget(id, {
+                categoryId: budget.categoryId,
+                walletIds: budget.walletIds || [],
+                limitAmount: budget.limitAmount,
+                dueDate: nextDueStr,
+              });
+              await refetch();
+              return;
+            } catch (err) {
+              console.error('Manual reset budget failed:', err);
+            }
+          }
+          await refetch();
         }}
         onEdit={startEdit}
         onDelete={handleDelete}

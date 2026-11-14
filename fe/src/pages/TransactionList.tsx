@@ -22,7 +22,7 @@ const emptyFilters: TransactionFilterValues = {
 };
 
 export default function TransactionList() {
-  const { transactions, categories, wallets, loading, error, refetch } = useApp();
+  const { transactions, categories, wallets, budgets, loading, error, refetch } = useApp();
   const [filters, setFilters] = useState<TransactionFilterValues>(emptyFilters);
   const [detailModal, setDetailModal] = useState<{ open: boolean; tx: Transaction | null }>({
     open: false,
@@ -35,7 +35,7 @@ export default function TransactionList() {
     pagination.calendarGroups,
     pagination.from
   );
-  const form = useTransactionForm({ refetch });
+  const form = useTransactionForm({ refetch, budgets, categories, transactions, wallets });
 
   const updateFilter = <K extends keyof TransactionFilterValues>(
     field: K,

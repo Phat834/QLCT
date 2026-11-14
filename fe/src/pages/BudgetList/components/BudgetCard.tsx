@@ -5,13 +5,13 @@ import { formatDueDate, type BudgetCardData } from '../utils/budgetUtils';
 
 type BudgetCardProps = {
   data: BudgetCardData;
-  onReset: (id: string, spent: number) => void;
+  onReset: (id: string, rawSpent: number) => void | Promise<void>;
   onEdit: (budget: Budget) => void;
   onDelete: (id: string) => void;
 };
 
 export default function BudgetCard({ data, onReset, onEdit, onDelete }: BudgetCardProps) {
-  const { budget, categoryName, budgetWallets, spent, limitAmount, pct, dueStatus } = data;
+  const { budget, categoryName, budgetWallets, spent, rawSpent, limitAmount, pct, dueStatus } = data;
   const progressClass = pct >= 100
     ? styles.progressDanger
     : pct >= 80
@@ -49,7 +49,7 @@ export default function BudgetCard({ data, onReset, onEdit, onDelete }: BudgetCa
         </div>
         <div className={styles.cardActions}>
           {pct >= 100 && (
-            <button type="button" onClick={() => onReset(budget.id, spent)} className={styles.resetButton} title="Reset về 0">
+            <button type="button" onClick={() => onReset(budget.id, rawSpent ?? spent)} className={styles.resetButton} title="Reset về 0">
               Reset
             </button>
           )}
